@@ -371,6 +371,13 @@
       return;
     }
     if (S.sub === 'reveal') { stage.innerHTML = '<div class="center"><div class="big">' + coinT(st.team) + '+' + (S.cur.bpts || 0) + '</div><div class="sub">' + fallos(S.cur.err || 0) + '</div>' + gainsHtml() + '</div>'; return; }
+    if (S3.on && S3.board) {
+      var order = shuffle(B.cards.map(function (_, i) { return i; })), counts = B.bins.map(function (_, bi) { return B.cards.filter(function (c) { return c[1] === bi; }).length; });
+      stage.innerHTML = timerHtml() + '<div class="board b3"><div class="bhead" id="bh"><h2>' + coinT(st.team) + esc(B.title) + '</h2><div class="er" id="er">Fallos: 0</div><div class="tnum" id="tn"></div></div><div id="pad3d"></div><div id="bsum"></div></div>';
+      S3.board.start({ bins: B.bins, cards: B.cards.map(function (c) { return c[0]; }), order: order, counts: counts }, drop3d);
+      S3.setMode('table', st.r);
+      return;
+    }
     var n = B.bins.length, cols = n <= 6 ? n : 4;
     var h = timerHtml() + '<div class="board"><div class="bhead" id="bh"><h2>' + coinT(st.team) + esc(B.title) + '</h2><div class="er" id="er">Fallos: 0</div><div class="tnum" id="tn"></div></div><div class="bins" style="grid-template-columns:repeat(' + cols + ',1fr)">';
     B.bins.forEach(function (b, i) { h += '<div class="bin" data-b="' + i + '"><h4>' + esc(b) + '</h4></div>'; });
@@ -378,6 +385,11 @@
     shuffle(B.cards.map(function (_, i) { return i; })).forEach(function (i) { h += '<div class="card" data-c="' + i + '">' + esc(B.cards[i][0]) + '</div>'; });
     stage.innerHTML = h + '</div></div>';
     drags = {}; picked = null;
+  }
+  function drop3d(ci, bi) {
+    var st = step(), B = C.boards[st.b]; if (S.sub !== 'open' || st.type !== 'board') return false;
+    if (B.cards[ci][1] === bi) { S.cur.placed++; Sfx.ok(); if (S.cur.placed >= B.cards.length) setTimeout(finishBoard, 800); save(); return true; }
+    S.cur.err++; Sfx.bad(); var e = document.getElementById('er'); if (e) e.textContent = 'Fallos: ' + S.cur.err; save(); return false;
   }
   function startBoard() { var st = step(); S.sub = 'open'; S.cur.t0 = now(); S.cur.err = 0; S.cur.placed = 0; S.cur.total = st.secs * 1000; S.deadline = now() + S.cur.total; Sfx.gong(); music(); render(); pub(); setTimeout(function () { if (step() === st && S.sub === 'open') pub(); }, 12500); }
   function attempt(card, binEl) {
@@ -404,12 +416,18 @@
     S.cur.res = bp; S.cur.bucket = bucket; S.cur.bpts = pts; S.paused = 0; S.sub = 'reveal';
     S.qlog.push({ q: 'Tablero «' + B.title + '» (equipo ' + team(st.team).name + ')', a: fallos(S.cur.err), t: st.t, ok: Math.max(0, S.cur.placed - S.cur.err), n: B.cards.length, board: true });
     /* colocar lo que falte, para que se vea la solución */
+    var s3 = document.getElementById('bsum');
+    if (s3) {
+      if (S3.board) S3.board.finish(B.cards.map(function (c) { return c[1]; }));
+      s3.innerHTML = '<div class="big">' + coinT(st.team) + '+' + pts + ' puntos</div><div class="count" style="font-size:1.6rem;margin-top:.6rem">' + S.cur.placed + ' de ' + B.cards.length + ' colocadas · ' + fallos(S.cur.err) + (all ? ' · bonus de tiempo +' + Math.round(left / 1000) * 10 : '') + ' · Apuesta ganadora: ' + ['0 fallos', '1 o 2 fallos', '3 o más'][bucket] + '</div>' + gainsHtml();
+      var tn3 = document.getElementById('tn'); if (tn3) tn3.textContent = ''; var tb3 = document.getElementById('tbar'); if (tb3) tb3.style.display = 'none';
+    }
     var tray = document.getElementById('tray');
     if (tray) {
       [].slice.call(tray.querySelectorAll('.card')).forEach(function (c) { var bi = B.cards[+c.getAttribute('data-c')][1], bin = stage.querySelector('.bin[data-b="' + bi + '"]'); c.className = 'card late'; c.style.cssText = ''; if (bin) bin.appendChild(c); });
       tray.innerHTML = '<div style="text-align:center"><div class="big">' + coinT(st.team) + '+' + pts + ' puntos</div><div class="count" style="font-size:1.6rem;margin-top:.6rem">' + S.cur.placed + ' de ' + B.cards.length + ' colocadas · ' + fallos(S.cur.err) + (all ? ' · bonus de tiempo +' + Math.round(left / 1000) * 10 : '') + ' · Apuesta ganadora: ' + ['0 fallos', '1 o 2 fallos', '3 o más'][bucket] + '</div>' + gainsHtml() + '</div>';
       var tn = document.getElementById('tn'); if (tn) tn.textContent = ''; var tb0 = document.getElementById('tbar'); if (tb0) tb0.style.display = 'none';
-    } else render();
+    } else if (!s3) render();
     if (all && S.cur.err <= 1) Sfx.fanfare(); else Sfx.reveal();
     music(); renderTop(); renderBar(); pub();
   }
@@ -443,6 +461,13 @@
     d.el.classList.remove('drag'); d.el.style.transform = '';
     var b = u && u.closest ? u.closest('.bin') : null; if (b && e.type !== 'pointercancel') attempt(d.el, b);
   }
+  ['pointerdown', 'pointermove', 'pointerup', 'pointercancel'].forEach(function (ev) {
+    stage.addEventListener(ev, function (e) {
+      if (!S3.on || !S3.board || !S3.board.active) return;
+      if (ev === 'pointerdown') { if (e.target.id !== 'pad3d') return; Sfx.init(); try { e.target.setPointerCapture(e.pointerId); } catch (_) {} e.preventDefault(); }
+      S3.board.pointer(ev.replace('pointer', ''), e.pointerId, e.clientX, e.clientY);
+    });
+  });
   stage.addEventListener('pointerup', endDrag); stage.addEventListener('pointercancel', endDrag);
 
   /* ----- ágora ----- */
@@ -468,14 +493,14 @@
     if (!cands.length) return done && done(-1);
     var fresh = cands.filter(function (i) { return S.orac.indexOf(i) < 0; }); if (fresh.length) cands = fresh;
     var ri = pick(cands), el = document.createElement('div'), n = 0, all = present();
-    el.className = 'orc'; el.innerHTML = '<div class="seal">' + Art.coin('temple', 'var(--gold)') + '</div><div class="kick">El oráculo de Delfos elige a</div><div class="n"></div><div class="w">' + esc(why || '') + '</div><div class="gr">ΓΝΩΘΙ ΣΑΥΤΟΝ · conócete a ti mismo</div>';
+    el.className = 'orc' + (S3.on ? ' o3d' : ''); if (S3.on) { S3.oracle(true); document.body.classList.add('orc3'); } el.innerHTML = '<div class="seal">' + Art.coin('temple', 'var(--gold)') + '</div><div class="kick">El oráculo de Delfos elige a</div><div class="n"></div><div class="w">' + esc(why || '') + '</div><div class="gr">ΓΝΩΘΙ ΣΑΥΤΟΝ · conócete a ti mismo</div>';
     ov.appendChild(el); Sfx.drum(1.8);
     var nm = el.querySelector('.n'), iv = setInterval(function () {
-      nm.textContent = S.roster[pick(all)].n; Sfx.tick(n % 2);
+      nm.textContent = S.roster[pick(all)].n; Sfx.tick(n % 2); if (S3.on) S3.oraclePulse();
       if (++n > 18) {
-        clearInterval(iv); nm.textContent = S.roster[ri].n; nm.className = 'n done'; S.orac.push(ri); Sfx.ok(); Sfx.say('El oráculo elige a ' + S.roster[ri].n.replace(/\./g, ''));
-        var close = function () { if (el.parentNode) { el.parentNode.removeChild(el); if (done) done(ri); } };
-        el.onclick = close; setTimeout(close, 2800);
+        clearInterval(iv); nm.textContent = S.roster[ri].n; nm.className = 'n done'; S.orac.push(ri); Sfx.ok(); if (S3.on) S3.oracleBurst(); Sfx.say('El oráculo elige a ' + S.roster[ri].n.replace(/\./g, ''));
+        var close = function () { if (el.parentNode) { el.parentNode.removeChild(el); if (done) done(ri); setTimeout(function () { if (!ov.querySelector('.orc')) { document.body.classList.remove('orc3'); if (S3.on) S3.oracle(false); } }, 80); } };
+        el.onclick = close; setTimeout(close, 3400);
       }
     }, 100);
   }
@@ -492,8 +517,8 @@
   /* ----- quién soy ----- */
   function vWho(st) {
     var rv = S.sub === 'reveal', name = C.names[st.a], cl = S.cur.clue || 0, RN = ['I', 'II', 'III', 'IV'];
-    var h = (rv ? '' : timerHtml()) + '<div class="who6"><div class="av">' +
-      (rv ? '<div class="wreath">' + Art.laurel() + '<span>' + name + '</span></div><div class="count"><b>' + (S.cur.ok || 0) + '</b> / ' + (S.cur.n || 0) + ' aciertos</div>' : '<div class="urn">' + Art.ic('amphora') + '<b>?</b></div><div class="pts">' + fmt(PTS_WHO[cl]) + '<small>puntos si aciertas ahora · un solo intento</small></div><div class="tnum" id="tn" style="font-size:3.6rem"></div>' + liveCount()) + '</div><div class="clues">';
+    var h = (rv ? '' : timerHtml()) + '<div class="who6' + (S3.on ? ' w3' + (rv ? ' rvl' : '') : '') + '"><div class="av">' +
+      (rv ? (S3.on ? '<div class="kick">Era</div><div class="nm6">' + name + '</div>' : '<div class="wreath">' + Art.laurel() + '<span>' + name + '</span></div>') + '<div class="count"><b>' + (S.cur.ok || 0) + '</b> / ' + (S.cur.n || 0) + ' aciertos</div>' : (S3.on ? '' : '<div class="urn">' + Art.ic('amphora') + '<b>?</b></div>') + '<div class="pts">' + fmt(PTS_WHO[cl]) + '<small>puntos si aciertas ahora · un solo intento</small></div><div class="tnum" id="tn" style="font-size:3.6rem"></div>' + liveCount()) + '</div><div class="clues">';
     st.clues.forEach(function (c, i) { h += i <= cl || rv ? '<div class="clue"><b>' + RN[i] + '</b><span>«' + esc(c) + '»</span></div>' : '<div class="clue wait"><b>' + RN[i] + '</b><span>Pista por ' + fmt(PTS_WHO[i]) + ' puntos</span></div>'; });
     stage.innerHTML = h + (rv ? gainsHtml() : '') + '</div></div>';
   }
@@ -509,8 +534,12 @@
     S3.onFrame = null;
     if (!S3.on) { root.style.setProperty('--scrim', 0); return; }
     if (S.teamsMade || !lobby) S3.setTeams(S.nTeams, C.teams);
-    S3.setMode(lobby ? 'lobby' : t === 'scores' ? 'scores' : end ? 'out' : 'play', st.r || 1);
+    var b3 = t === 'board' && S.sub !== 'ready' && !!S3.board && (S.sub === 'open' || S3.board.active);
+    if (S3.board && S3.board.active && !b3) S3.board.stop();
+    S3.setMode(lobby ? 'lobby' : t === 'scores' ? 'scores' : end ? 'out' : b3 ? 'table' : t === 'who' ? 'who' : 'play', st.r || 1);
+    if (t === 'who') S3.who((S.cur.clue || 0) + 1, S.sub === 'reveal', C.names[st.a]);
     sc = lobby ? 0.2 : t === 'intro' ? 0.42 : (t === 'scores' || t === 'podium') ? 0 : t === 'bye' ? 0.3 : t === 'report' ? 0.82 : (t === 'board' && S.sub === 'ready') ? 0.5 : 0.76;
+    if (b3) sc = S.sub === 'open' ? 0 : 0.55; if (t === 'who') sc = 0.08;
     root.style.setProperty('--scrim', sc);
     if (lobby) S3.setProgress([], true);
     else if (end) S3.setPodium(ranking().slice(0, 3));
