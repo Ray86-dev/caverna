@@ -1,10 +1,10 @@
 /* Pantalla principal (PIM). Es la autoridad del juego: los móviles solo envían respuestas. */
 (function () {
   'use strict';
-  var C = window.CONTENT, Sfx = window.Sfx, Net = window.Net;
+  var C = window.CONTENT, Sfx = window.Sfx, Net = window.Net, Art = window.Art;
+  var ROM = ['', 'I', 'II', 'III', 'IV', 'V', 'VI'], GL = ['Α', 'Β', 'Γ', 'Δ'];
   var LS = 'caverna-host-v3', LSR = 'caverna-roster';
-  var PTS_WHO = [1500, 1000, 600, 300], SHAPES = ['▲', '◆', '●', '■'];
-  var FACES = { 'Demócrito': '⚛️', 'Protágoras': '💰', 'Anaximandro': '♾️', 'Parménides': '🗿', 'Sócrates': '🏛️' };
+  var PTS_WHO = [1500, 1000, 600, 300];
   var S, demo = /[?&]demo/.test(location.search), botT = [], pubT = null, lastSec = -1, fxMode = 'embers';
   var stage = document.getElementById('stage'), bar = document.getElementById('bar'), menu = document.getElementById('menu'), ov = document.getElementById('ov');
 
@@ -123,13 +123,13 @@
   }
   function nextLabel() {
     var st = step();
-    if (S.phase === 'lobby') return '▶ ¡Empezar!';
-    if (S.paused) return '▶ Reanudar';
-    if (st.type === 'board' && S.sub === 'ready') return '▶ ¡Ya!';
-    if (st.type === 'board' && S.sub === 'open') return '⏹ Terminar';
-    if (S.sub === 'open') return st.type === 'poll' ? '📊 Ver resultado' : '⏩ Resolver ya';
-    if (st.type === 'bye') return '🏁 Fin';
-    return '▶ Siguiente';
+    if (S.phase === 'lobby') return 'Empezar';
+    if (S.paused) return 'Reanudar';
+    if (st.type === 'board' && S.sub === 'ready') return '¡Ya!';
+    if (st.type === 'board' && S.sub === 'open') return 'Terminar';
+    if (S.sub === 'open') return st.type === 'poll' ? 'Ver resultado' : 'Resolver ya';
+    if (st.type === 'bye') return 'Fin';
+    return 'Siguiente';
   }
   function togglePause() {
     if (S.sub !== 'open' || !S.deadline) return;
@@ -189,7 +189,7 @@
       r.st[st.t][1]++;
       if (good) {
         ok++; r.st[st.t][0]++;
-        pts[i] = st.type === 'who' ? PTS_WHO[a.clue] : st.kind === 'quiz' ? Math.round(600 + 400 * frac) : st.kind === 'duel' ? Math.round(300 + 200 * frac) : 1000;
+        pts[i] = st.type === 'who' ? PTS_WHO[a.clue] : st.kind === 'quiz' ? Math.round(60 + 40 * frac) * 10 : st.kind === 'duel' ? Math.round(30 + 20 * frac) * 10 : 1000;
       } else pts[i] = 0;
     });
     Object.keys(pts).forEach(function (i) { S.roster[i].pts += pts[i]; });
@@ -236,7 +236,7 @@
     Net.send('st', {
       v: S.v, gid: S.gid || '', now: now(), phase: S.phase, idx: S.idx, sub: S.sub, deadline: S.paused ? 0 : S.deadline, left: S.paused, total: S.cur.total || 0,
       step: pubStep(), nT: S.nTeams, made: S.teamsMade, sc: S.score.slice(0, Math.max(S.nTeams, 1)),
-      tm: C.teams.map(function (t) { return [t.name, t.emoji, t.color]; }),
+      tm: C.teams.map(function (t) { return [t.name, t.icon, t.color]; }),
       ro: S.roster.map(function (r) { return [r.n, r.team, r.cid ? r.cid.slice(0, 8) : (r.bot ? 'bot' : ''), r.out ? 1 : 0, r.pts, end ? r.st : 0]; }),
       ans: Object.keys(S.ans).map(Number), res: S.sub === 'reveal' ? (S.cur.res || {}) : null, gain: S.sub === 'reveal' ? (S.cur.gain || null) : null
     });
@@ -269,27 +269,28 @@
   }
 
   /* ---------- pintar ---------- */
+  function coinT(k, cls) { return Art.coin(team(k).icon, team(k).color, cls); }
   function renderTop() {
     var st = step(), rl = document.getElementById('rl'), h = '';
-    if (S.phase === 'lobby') rl.innerHTML = 'Sala <b style="color:#fff;letter-spacing:.2rem">' + S.code + '</b>';
+    if (S.phase === 'lobby') rl.innerHTML = 'Sala <b>' + S.code + '</b>';
     else {
       var R = C.rounds[(st.r || 1) - 1], inR = S.steps.filter(function (x) { return x.r === st.r && (x.type !== 'intro' && x.type !== 'scores' && x.type !== 'podium' && x.type !== 'report' && x.type !== 'bye'); });
       var pos = inR.indexOf(st);
-      rl.innerHTML = R.icon + ' Ronda ' + st.r + '/6 <small>' + esc(R.title) + (pos >= 0 ? ' · ' + (pos + 1) + '/' + inR.length : '') + '</small>';
+      rl.innerHTML = Art.ic(R.icon) + ' Ronda ' + ROM[st.r] + ' <small>' + esc(R.title) + (pos >= 0 ? ' · ' + (pos + 1) + ' de ' + inR.length : '') + '</small>';
     }
-    if (S.teamsMade || S.phase !== 'lobby') for (var k = 0; k < S.nTeams; k++) h += '<div class="chip' + (S.sub === 'reveal' && S.cur.gain && S.cur.gain[k] > 0 ? ' bump' : '') + '" style="--tc:' + team(k).color + '"><i>' + team(k).emoji + '</i>' + fmt(S.score[k]) + '</div>';
+    if (S.teamsMade || S.phase !== 'lobby') for (var k = 0; k < S.nTeams; k++) h += '<div class="chip' + (S.sub === 'reveal' && S.cur.gain && S.cur.gain[k] > 0 ? ' bump' : '') + '">' + coinT(k) + fmt(S.score[k]) + '</div>';
     document.getElementById('chips').innerHTML = h;
     renderMeta();
   }
   function renderMeta() {
     var c = 0; S.roster.forEach(function (r, i) { if (!r.out && r.cid && now() - r.seen < 45000) c++; });
     var el = S.t0 ? Math.floor((now() - S.t0) / 1000) : 0, mm = Math.floor(el / 60), ss = el % 60;
-    document.getElementById('meta').innerHTML = '<span><span class="dot ' + Net.status + '"></span> 📱 ' + c + '</span>' + (S.t0 && S.phase !== 'lobby' ? '<span>⏱ ' + mm + ':' + (ss < 10 ? '0' : '') + ss + '</span>' : '');
+    document.getElementById('meta').innerHTML = '<span><span class="dot ' + Net.status + '"></span></span><span>' + Art.ic('phone') + c + '</span>' + (S.t0 && S.phase !== 'lobby' ? '<span>' + Art.ic('glass') + mm + ':' + (ss < 10 ? '0' : '') + ss + '</span>' : '');
   }
   function renderBar() {
-    bar.innerHTML = '<button class="b" data-a="menu">☰ Menú</button>' +
-      (S.sub === 'open' && S.deadline ? '<button class="b" data-a="pause">' + (S.paused ? '▶' : '⏸') + '</button><button class="b" data-a="plus">+10 s</button>' : '') +
-      (S.phase !== 'lobby' ? '<button class="b" data-a="orac">🏛️ Oráculo</button>' : '') +
+    bar.innerHTML = '<button class="b" data-a="menu">Menú</button>' +
+      (S.sub === 'open' && S.deadline ? '<button class="b" data-a="pause">' + (S.paused ? 'Seguir' : 'Pausa') + '</button><button class="b" data-a="plus">+10 s</button>' : '') +
+      (S.phase !== 'lobby' ? '<button class="b" data-a="orac">' + Art.ic('temple') + ' Oráculo</button>' : '') +
       '<div class="sp"></div><button class="b go" data-a="next">' + nextLabel() + '</button>';
   }
   function timerHtml() { return '<div id="tbar"><i></i></div>'; }
@@ -297,7 +298,7 @@
   function live() { var e = document.getElementById('lc'); if (e) e.textContent = Object.keys(S.ans).length; }
   function gainsHtml() {
     if (!S.cur.gain) return ''; var h = '<div class="gains">';
-    S.cur.gain.forEach(function (g, k) { h += '<div class="gain" style="--tc:' + team(k).color + ';animation-delay:' + (k * 0.08) + 's">' + team(k).emoji + ' +' + g + '</div>'; });
+    S.cur.gain.forEach(function (g, k) { h += '<div class="gain" style="animation-delay:' + (k * 0.08) + 's">' + coinT(k) + '+' + g + '</div>'; });
     return h + '</div>';
   }
   function playUrl() { return location.href.replace(/[?#].*$/, '').replace(/host\.html$/, '') + '?s=' + S.code; }
@@ -305,36 +306,35 @@
   function render() {
     var st = step(), f = { lobby: vLobby, intro: vIntro, mcq: vMcq, board: vBoard, poll: vPoll, who: vWho, scores: vScores, podium: vPodium, report: vReport, bye: vBye }[S.phase === 'lobby' ? 'lobby' : st.type];
     lastSec = -1; closeMenu();
-    document.body.className = fxMode === 'matrix' ? 'matrix' : '';
     f(st); renderTop(); renderBar();
   }
 
   function vLobby() {
     var qr = '';
-    try { var q = window.qrcode(0, 'M'); q.addData(playUrl()); q.make(); qr = q.createSvgTag({ cellSize: 4, margin: 0, scalable: true }); } catch (e) {}
+    try { var q = window.qrcode(0, 'M'); q.addData(playUrl()); q.make(); qr = q.createSvgTag({ cellSize: 4, margin: 0, scalable: true }).replace(/fill="white"/g, 'fill="#f2e4c9"').replace(/fill="black"/g, 'fill="#14100c"'); } catch (e) {}
     var u = playUrl().replace(/^https?:\/\//, '').replace(/\?s=.*/, '');
-    var h = '<div class="lobby"><div class="l"><h1 class="glow">SAL DE LA<br>CAVERNA</h1><div class="url">El gran repaso de Filosofía</div><div class="qr">' + qr + '</div>' +
-      '<div class="url">Escanea el QR o entra en <b>' + esc(u) + '</b><br>y escribe el código</div><div class="code">' + S.code + '</div></div><div class="r">';
-    h += '<div class="tools"><button class="b sm" data-a="teams">🎲 ' + (S.teamsMade ? 'Volver a sortear' : 'Formar equipos') + '</button><span>Equipos:</span>';
+    var h = '<div class="lobby"><div class="l"><div class="gr">ΦΙΛΟΣΟΦΙΑ</div><h1>Sal de la <em>caverna</em></h1><div class="rule">' + Art.ic('sun') + '</div><div class="qr">' + qr + '</div>' +
+      '<div class="url">Escanea el código o entra en <b>' + esc(u) + '</b><br>y escribe la clave de la sala</div><div class="code">' + S.code + '</div></div><div class="r">';
+    h += '<div class="tools"><button class="b sm" data-a="teams">' + (S.teamsMade ? 'Volver a sortear' : 'Sortear equipos') + '</button><span>Equipos</span>';
     [2, 3, 4, 5].forEach(function (n) { h += '<button class="b sm' + ((S.nTeams || autoTeams()) === n ? ' sel' : '') + '" data-a="nt" data-n="' + n + '">' + n + '</button>'; });
-    h += '<div class="sp"></div><button class="b sm" data-a="list">✏️ Lista</button><button class="b sm' + (demo ? ' sel' : '') + '" data-a="demo">🤖 Ensayo</button></div>';
+    h += '<div class="sp"></div><button class="b sm" data-a="list">Lista</button><button class="b sm' + (demo ? ' sel' : '') + '" data-a="demo">Ensayo</button></div>';
     var cols, groups = [];
-    if (S.teamsMade) { for (var k = 0; k < S.nTeams; k++) groups.push({ title: team(k).emoji + ' ' + team(k).name, color: team(k).color, ids: members(k) }); var outs = []; S.roster.forEach(function (r, i) { if (r.out) outs.push(i); }); if (outs.length) groups.push({ title: 'Ausentes', color: '#555', ids: outs }); cols = Math.min(3, groups.length); }
-    else { var by = {}; S.roster.forEach(function (r, i) { var g = r.g ? '4.º ' + r.g : 'Jugadores'; (by[g] = by[g] || []).push(i); }); Object.keys(by).sort().forEach(function (g) { groups.push({ title: g, color: '#7a6f95', ids: by[g] }); }); cols = Math.max(1, Math.min(2, groups.length)); }
+    if (S.teamsMade) { for (var k = 0; k < S.nTeams; k++) groups.push({ title: coinT(k) + ' ' + team(k).name, color: team(k).color, ids: members(k) }); var outs = []; S.roster.forEach(function (r, i) { if (r.out) outs.push(i); }); if (outs.length) groups.push({ title: 'Ausentes', color: '#4a3a2a', ids: outs }); cols = Math.min(3, groups.length); }
+    else { var by = {}; S.roster.forEach(function (r, i) { var g = r.g ? '4.º ' + r.g : 'Jugadores'; (by[g] = by[g] || []).push(i); }); Object.keys(by).sort().forEach(function (g) { groups.push({ title: g, color: '#cf5f2e', ids: by[g] }); }); cols = Math.max(1, Math.min(2, groups.length)); }
     h += '<div class="groups" style="--cols:' + cols + '">';
     groups.forEach(function (g) {
       h += '<div class="grp" style="--tc:' + g.color + '"><h3>' + g.title + '<small>' + g.ids.length + '</small></h3><div class="names">';
-      g.ids.forEach(function (i) { var r = S.roster[i]; h += '<button class="nm' + (r.out ? ' out' : r.cid ? ' in' : (demo ? ' bot' : '')) + '" data-a="nm" data-i="' + i + '">' + esc(r.n) + '</button>'; });
+      g.ids.forEach(function (i) { var r = S.roster[i]; h += '<button class="nm' + (r.out ? ' out' : r.cid ? ' in' : (demo ? ' bot' : '')) + '" data-a="nm" data-i="' + i + '">' + (r.cid && !r.out ? Art.ic('phone') : '') + esc(r.n) + '</button>'; });
       h += '</div></div>';
     });
-    if (!S.roster.length) h += '<div class="grp"><h3>Esperando jugadores…</h3><div class="hint">Cada alumno entra con su móvil y escribe su nombre.</div></div>';
+    if (!S.roster.length) h += '<div class="grp"><h3>Esperando jugadores</h3><div class="hint">Cada alumno entra con su móvil y escribe su nombre.</div></div>';
     h += '</div><div class="hint">Toca un nombre para marcarlo como ausente (o para liberar su móvil si alguien se equivocó). Quien no tenga móvil juega igual: responde con su equipo y sale a la pantalla.</div></div></div>';
     stage.innerHTML = h;
   }
 
   function vIntro(st) {
     var R = C.rounds[st.r - 1];
-    stage.innerHTML = '<div class="center intro"><div class="rn">Ronda ' + R.n + ' de 6</div><div class="ic">' + R.icon + '</div><h1 class="glow">' + esc(R.title) + '</h1><div class="sb">' + esc(R.sub) + '</div><ul>' + R.how.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></div>';
+    stage.innerHTML = '<div class="center intro"><div class="kick">Ronda ' + ROM[R.n] + ' de VI</div><div class="seal">' + Art.coin(R.icon, 'var(--clay)') + '</div><h1>' + esc(R.title) + '</h1><div class="sub">' + esc(R.sub) + '</div><ul>' + R.how.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></div>';
   }
 
   function vMcq(st) {
@@ -343,18 +343,18 @@
     function nn(i) { return rv ? '<span class="n">' + (cnt[i] || 0) + '</span>' : ''; }
     if (st.kind === 'duel') {
       h += '<div class="duel"><div class="st">' + esc(st.q) + '</div><div class="vs">' +
-        '<div class="sd' + cls(0) + '" style="--oc:var(--c0)"><span>' + st.icons[0] + '</span>' + st.opts[0] + nn(0) + '</div>' +
+        '<div class="sd fa' + cls(0) + '">' + Art.ic(st.icons[0]) + st.opts[0] + nn(0) + '</div>' +
         '<div class="mid">' + (rv ? '' : '<div class="tnum" id="tn"></div>') + liveCount() + '</div>' +
-        '<div class="sd' + cls(1) + '" style="--oc:var(--c1)"><span>' + st.icons[1] + '</span>' + st.opts[1] + nn(1) + '</div></div>' +
-        (rv ? '<div class="expl" style="text-align:center">' + esc(st.e) + '</div>' : '<div class="expl" style="visibility:hidden">.</div>') + '</div>';
+        '<div class="sd fb' + cls(1) + '">' + Art.ic(st.icons[1]) + st.opts[1] + nn(1) + '</div></div>' +
+        (rv ? '<div class="expl" style="text-align:center;border-left:0">' + esc(st.e) + '</div>' : '<div class="expl" style="visibility:hidden">.</div>') + '</div>';
     } else if (st.kind === 'bulo') {
-      var stamp = rv ? ['<div class="stamp" style="color:#1c9c55">VERDAD</div>', '<div class="stamp" style="color:#d6263c">FALSO</div>', '<div class="stamp" style="color:#c77a00">NO COMPROBABLE</div>'][st.correct] : '';
-      h += '<div class="post"><div class="fw">↪ Reenviado muchas veces</div><div class="tx">' + esc(st.q) + '</div><div class="ft"><span>❤️ 12,4 mil</span><span>🔁 3.871</span><span>💬 «¡Compártelo antes de que lo borren!»</span></div>' + stamp + '</div>';
-      h += '<div class="opts three">' + st.opts.map(function (o, i) { return '<div class="opt' + cls(i) + '" style="--oc:var(--c' + [3, 0, 2][i] + ')">' + esc(o) + nn(i) + '</div>'; }).join('') + '</div>';
-      h += rv ? '<div class="expl">' + esc(st.e) + '<small>🔎 ' + esc(st.k) + '</small></div>' + gainsHtml() : '<div class="row"><div class="tnum" id="tn"></div>' + liveCount() + '<div class="count">🔍 Se puede buscar<br>y discutir en equipo</div></div>';
+      var stamp = rv ? ['<div class="stamp" style="color:#4f7a1f">Verdad</div>', '<div class="stamp" style="color:#b22a1a">Falso</div>', '<div class="stamp" style="color:#946200">No comprobable</div>'][st.correct] : '';
+      h += '<div class="post' + (rv ? ' rv' : '') + '"><div class="fw">Mensaje reenviado muchas veces</div><div class="tx">' + esc(st.q) + '</div></div><div class="stampw">' + stamp + '</div>';
+      h += '<div class="opts three">' + st.opts.map(function (o, i) { return '<div class="opt' + cls(i) + '"><span class="lt">' + Art.ic(['check', 'cross', 'ask'][i]) + '</span>' + esc(o) + nn(i) + '</div>'; }).join('') + '</div>';
+      h += rv ? '<div class="expl">' + esc(st.e) + '<small>' + esc(st.k) + '</small></div>' + gainsHtml() : '<div class="row"><div class="tnum" id="tn"></div>' + liveCount() + '<div class="count">' + Art.ic('lens') + ' Se puede buscar<br>y discutir en equipo</div></div>';
     } else {
-      h += '<div class="q"><div class="tx"><div class="tag">Tema ' + st.t + ' · ' + C.temas[st.t] + '</div><br>' + esc(st.q) + '</div><div class="side">' + (rv ? '<div class="tnum">' + (S.cur.n ? Math.round(100 * S.cur.ok / S.cur.n) : 0) + '%</div><div class="count">de aciertos</div>' : '<div class="tnum" id="tn"></div>' + liveCount()) + '</div></div>';
-      h += '<div class="opts">' + st.opts.map(function (o, i) { return '<div class="opt' + cls(i) + '" style="--oc:var(--c' + i + ')"><span class="sh">' + SHAPES[i] + '</span>' + esc(o) + nn(i) + '</div>'; }).join('') + '</div>';
+      h += '<div class="q"><div class="tx"><span class="tag">Tema ' + st.t + ' · ' + C.temas[st.t] + '</span>' + esc(st.q) + '</div><div class="side">' + (rv ? '<div class="tnum">' + (S.cur.n ? Math.round(100 * S.cur.ok / S.cur.n) : 0) + '%</div><div class="count">de aciertos</div>' : '<div class="tnum" id="tn"></div>' + liveCount()) + '</div></div>';
+      h += '<div class="opts">' + st.opts.map(function (o, i) { return '<div class="opt' + cls(i) + '"><span class="lt">' + GL[i] + '</span>' + esc(o) + nn(i) + '</div>'; }).join('') + '</div>';
       if (rv) h += '<div class="expl">' + esc(st.e) + '</div>' + gainsHtml();
     }
     stage.innerHTML = h;
@@ -365,13 +365,13 @@
   function vBoard(st) {
     var T = team(st.team), B = C.boards[st.b];
     if (S.sub === 'ready') {
-      stage.innerHTML = '<div class="center ready"><div class="tm">' + T.emoji + '</div><h2 style="color:' + T.color + '">Equipo ' + T.name + ', ¡a la pantalla!</h2><div class="who">' + members(st.team).map(function (i) { return esc(S.roster[i].n); }).join(' · ') + '</div>' +
-        '<p>Tablero: <b style="color:#fff">' + esc(B.title) + '</b> · ' + B.cards.length + ' tarjetas · ' + st.secs + ' segundos</p><p>📱 Los demás equipos: apuesten en el móvil cuántos fallos tendrán. ' + liveCount().replace('<br>respuestas', ' apuestas') + '</p></div>';
+      stage.innerHTML = '<div class="center ready"><div class="kick">Turno de tablero</div><div class="seal">' + coinT(st.team) + '</div><h2 style="color:' + T.color + '">Equipo ' + T.name + ', a la pantalla</h2><div class="who">' + members(st.team).map(function (i) { return esc(S.roster[i].n); }).join(' · ') + '</div>' +
+        '<p>Tablero: <b>' + esc(B.title) + '</b> · ' + B.cards.length + ' tarjetas · ' + st.secs + ' segundos</p><p>' + Art.ic('phone') + ' Los demás equipos apuestan en el móvil cuántos fallos tendrán. ' + liveCount().replace('<br>respuestas', ' apuestas') + '</p></div>';
       return;
     }
-    if (S.sub === 'reveal') { stage.innerHTML = '<div class="center"><div class="big">' + T.emoji + ' +' + (S.cur.bpts || 0) + '</div><div class="intro"><div class="sb">' + fallos(S.cur.err || 0) + '</div></div>' + gainsHtml() + '</div>'; return; }
+    if (S.sub === 'reveal') { stage.innerHTML = '<div class="center"><div class="big">' + coinT(st.team) + '+' + (S.cur.bpts || 0) + '</div><div class="sub">' + fallos(S.cur.err || 0) + '</div>' + gainsHtml() + '</div>'; return; }
     var n = B.bins.length, cols = n <= 6 ? n : 4;
-    var h = timerHtml() + '<div class="board"><div class="bhead" id="bh"><h2>' + T.emoji + ' ' + esc(B.title) + '</h2><div class="er" id="er">Fallos: 0</div><div class="tnum" id="tn"></div></div><div class="bins" style="grid-template-columns:repeat(' + cols + ',1fr)">';
+    var h = timerHtml() + '<div class="board"><div class="bhead" id="bh"><h2>' + coinT(st.team) + esc(B.title) + '</h2><div class="er" id="er">Fallos: 0</div><div class="tnum" id="tn"></div></div><div class="bins" style="grid-template-columns:repeat(' + cols + ',1fr)">';
     B.bins.forEach(function (b, i) { h += '<div class="bin" data-b="' + i + '"><h4>' + esc(b) + '</h4></div>'; });
     h += '</div><div class="tray" id="tray">';
     shuffle(B.cards.map(function (_, i) { return i; })).forEach(function (i) { h += '<div class="card" data-c="' + i + '">' + esc(B.cards[i][0]) + '</div>'; });
@@ -405,8 +405,8 @@
     /* colocar lo que falte, para que se vea la solución */
     var tray = document.getElementById('tray');
     if (tray) {
-      [].slice.call(tray.querySelectorAll('.card')).forEach(function (c) { var bi = B.cards[+c.getAttribute('data-c')][1], bin = stage.querySelector('.bin[data-b="' + bi + '"]'); c.className = 'card'; c.style.cssText = 'background:#4a3413;border-color:var(--c2)'; if (bin) bin.appendChild(c); });
-      tray.innerHTML = '<div style="text-align:center"><div class="big" style="font-size:4.5rem">' + team(st.team).emoji + ' +' + pts + ' puntos</div><div class="count" style="font-size:1.7rem">' + S.cur.placed + ' de ' + B.cards.length + ' colocadas · ' + fallos(S.cur.err) + (all ? ' · bonus de tiempo +' + Math.round(left / 1000) * 10 : '') + ' · Apuesta ganadora: ' + ['0 fallos', '1 o 2 fallos', '3 o más'][bucket] + '</div>' + gainsHtml() + '</div>';
+      [].slice.call(tray.querySelectorAll('.card')).forEach(function (c) { var bi = B.cards[+c.getAttribute('data-c')][1], bin = stage.querySelector('.bin[data-b="' + bi + '"]'); c.className = 'card late'; c.style.cssText = ''; if (bin) bin.appendChild(c); });
+      tray.innerHTML = '<div style="text-align:center"><div class="big">' + coinT(st.team) + '+' + pts + ' puntos</div><div class="count" style="font-size:1.6rem;margin-top:.6rem">' + S.cur.placed + ' de ' + B.cards.length + ' colocadas · ' + fallos(S.cur.err) + (all ? ' · bonus de tiempo +' + Math.round(left / 1000) * 10 : '') + ' · Apuesta ganadora: ' + ['0 fallos', '1 o 2 fallos', '3 o más'][bucket] + '</div>' + gainsHtml() + '</div>';
       var tn = document.getElementById('tn'); if (tn) tn.textContent = ''; var tb0 = document.getElementById('tbar'); if (tb0) tb0.style.display = 'none';
     } else render();
     if (all && S.cur.err <= 1) Sfx.fanfare(); else Sfx.reveal();
@@ -446,21 +446,20 @@
 
   /* ----- ágora ----- */
   function vPoll(st) {
-    var rv = S.sub === 'reveal', cnt = S.cur.counts || [], n = S.cur.n || 0, cols = ['var(--c0)', 'var(--c1)', 'var(--c2)'];
-    if (st.theme !== 'matrix') cols = ['var(--c3)', 'var(--c0)', 'var(--c2)'];
-    if (st.theme === 'agora') cols = ['var(--c2)', 'var(--c1)'];
+    var rv = S.sub === 'reveal', cnt = S.cur.counts || [], n = S.cur.n || 0;
+    var cols = st.theme === 'matrix' ? ['#c8372d', '#2f6fb0'] : st.theme === 'gattaca' ? ['var(--ok)', 'var(--bad)', 'var(--gold)'] : ['var(--clay)', 'var(--sea)'];
     var h = (rv ? '' : timerHtml()) + '<div class="poll"><div class="m"><div class="pq">' + esc(st.q) + '</div>';
     st.opts.forEach(function (o, i) {
-      var who = (S.cur.orac || []).filter(function (x) { return x.o === i; }).map(function (x) { return '<em>🏛️ ' + esc(S.roster[x.ri].n) + '</em>'; }).join('');
+      var who = (S.cur.orac || []).filter(function (x) { return x.o === i; }).map(function (x) { return '<em>' + Art.ic('temple') + esc(S.roster[x.ri].n) + '</em>'; }).join('');
       h += '<div class="pbar" style="--oc:' + cols[i] + '"><i data-w="' + (rv && n ? Math.round(100 * (cnt[i] || 0) / n) : 0) + '"></i><span>' + esc(o) + '</span>' + who + (rv ? '<b>' + (cnt[i] || 0) + '</b>' : '') + '</div>';
     });
     h += rv ? '' : '<div class="row"><div class="tnum" id="tn"></div>' + liveCount().replace('respuestas', 'votos') + '</div>';
     h += '</div><div class="s"><h3>' + (rv ? 'Para pensarlo en voz alta' : 'Vota lo que pienses de verdad') + '</h3>';
     if (rv) {
-      h += '<ul>' + st.think.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul><button class="b" data-a="orac2" style="background:linear-gradient(180deg,#6d5bd0,#4a3aa8)">🏛️ Que el oráculo elija quién defiende cada postura</button><h3 style="margin-top:.6rem">⭐ Buena razón: +300 al equipo</h3><div class="stars">';
-      for (var k = 0; k < S.nTeams; k++) h += '<button class="b sm" data-a="star" data-k="' + k + '" style="border:.15rem solid ' + team(k).color + '">' + team(k).emoji + ' +300</button>';
+      h += '<ul>' + st.think.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul><button class="b" data-a="orac2" style="border-color:var(--gold);color:var(--gold)">' + Art.ic('temple') + ' Que elija el oráculo</button><h3 style="margin-top:.8rem">Buena razón: +300 al equipo</h3><div class="stars">';
+      for (var k = 0; k < S.nTeams; k++) h += '<button class="b sm" data-a="star" data-k="' + k + '">' + coinT(k) + ' +300</button>';
       h += '</div>';
-    } else h += '<p class="hint" style="font-size:1.6rem;line-height:1.4">Aquí no hay respuesta correcta.<br><br>Pero después del voto, el oráculo de Delfos elegirá a alguien de cada bando para que dé <b style="color:#fff">una razón</b>.<br><br>Ve pensando la tuya.</p>';
+    } else h += '<p>Aquí no hay respuesta correcta.</p><p>Después del voto, el oráculo de Delfos elegirá a alguien de cada bando para que dé <b>una razón</b>.</p><p>Ve pensando la tuya.</p>';
     stage.innerHTML = h + '</div></div>';
     if (rv) setTimeout(function () { [].forEach.call(stage.querySelectorAll('.pbar i'), function (e) { e.style.width = e.getAttribute('data-w') + '%'; }); }, 60);
   }
@@ -468,14 +467,14 @@
     if (!cands.length) return done && done(-1);
     var fresh = cands.filter(function (i) { return S.orac.indexOf(i) < 0; }); if (fresh.length) cands = fresh;
     var ri = pick(cands), el = document.createElement('div'), n = 0, all = present();
-    el.className = 'orc'; el.innerHTML = '<div class="t">🏛️ El oráculo de Delfos elige a…</div><div class="n"></div><div class="w">' + esc(why || '') + '</div>';
+    el.className = 'orc'; el.innerHTML = '<div class="seal">' + Art.coin('temple', 'var(--gold)') + '</div><div class="kick">El oráculo de Delfos elige a</div><div class="n"></div><div class="w">' + esc(why || '') + '</div><div class="gr">ΓΝΩΘΙ ΣΑΥΤΟΝ · conócete a ti mismo</div>';
     ov.appendChild(el); Sfx.drum(1.8);
     var nm = el.querySelector('.n'), iv = setInterval(function () {
       nm.textContent = S.roster[pick(all)].n; Sfx.tick(n % 2);
       if (++n > 18) {
-        clearInterval(iv); nm.textContent = S.roster[ri].n; nm.className = 'n done'; S.orac.push(ri); Sfx.ok(); Sfx.say('El oráculo elige a ' + S.roster[ri].n);
+        clearInterval(iv); nm.textContent = S.roster[ri].n; nm.className = 'n done'; S.orac.push(ri); Sfx.ok(); Sfx.say('El oráculo elige a ' + S.roster[ri].n.replace(/\./g, ''));
         var close = function () { if (el.parentNode) { el.parentNode.removeChild(el); if (done) done(ri); } };
-        el.onclick = close; setTimeout(close, 2600);
+        el.onclick = close; setTimeout(close, 2800);
       }
     }, 100);
   }
@@ -491,51 +490,51 @@
 
   /* ----- quién soy ----- */
   function vWho(st) {
-    var rv = S.sub === 'reveal', name = C.names[st.a], cl = S.cur.clue || 0;
-    var h = (rv ? '' : timerHtml()) + '<div class="who6"><div class="av"><div class="face" style="filter:none">' + (rv ? (FACES[name] || '🧠') : '❓') + '</div>' +
-      (rv ? '<div class="nm6">' + name + '</div><div class="count"><b>' + (S.cur.ok || 0) + '</b> / ' + (S.cur.n || 0) + ' aciertos</div>' : '<div class="pts">' + PTS_WHO[cl] + '<small>puntos si aciertas ahora · un solo intento</small></div><div class="tnum" id="tn"></div>' + liveCount()) + '</div><div class="clues">';
-    st.clues.forEach(function (c, i) { h += i <= cl || rv ? '<div class="clue"><b>' + (i + 1) + '</b>«' + esc(c) + '»</div>' : '<div class="clue wait"><b>' + (i + 1) + '</b>Pista por ' + PTS_WHO[i] + ' puntos…</div>'; });
+    var rv = S.sub === 'reveal', name = C.names[st.a], cl = S.cur.clue || 0, RN = ['I', 'II', 'III', 'IV'];
+    var h = (rv ? '' : timerHtml()) + '<div class="who6"><div class="av">' +
+      (rv ? '<div class="wreath">' + Art.laurel() + '<span>' + name + '</span></div><div class="count"><b>' + (S.cur.ok || 0) + '</b> / ' + (S.cur.n || 0) + ' aciertos</div>' : '<div class="urn">' + Art.ic('amphora') + '<b>?</b></div><div class="pts">' + fmt(PTS_WHO[cl]) + '<small>puntos si aciertas ahora · un solo intento</small></div><div class="tnum" id="tn" style="font-size:3.6rem"></div>' + liveCount()) + '</div><div class="clues">';
+    st.clues.forEach(function (c, i) { h += i <= cl || rv ? '<div class="clue"><b>' + RN[i] + '</b><span>«' + esc(c) + '»</span></div>' : '<div class="clue wait"><b>' + RN[i] + '</b><span>Pista por ' + fmt(PTS_WHO[i]) + ' puntos</span></div>'; });
     stage.innerHTML = h + (rv ? gainsHtml() : '') + '</div></div>';
   }
 
   /* ----- clasificación ----- */
   function vScores(st) {
     var mx = Math.max.apply(null, S.score.slice(0, S.nTeams).concat([1])), frac = Math.min(1, st.r / 6);
-    var h = '<div class="climb"><div class="sun">☀️ EL MUNDO REAL</div><div class="cols">';
-    for (var k = 0; k < S.nTeams; k++) h += '<div class="col" style="--tc:' + team(k).color + '"><div class="track"><div class="climber" data-h="' + (S.score[k] / mx * frac * 80) + '">' + team(k).emoji + '<b>' + fmt(S.score[k]) + '</b></div></div><div class="tn">' + team(k).name + '</div><div class="tm">' + members(k).map(function (i) { return esc(S.roster[i].n); }).join(', ') + '</div></div>';
-    stage.innerHTML = h + '</div></div>';
+    var h = '<div class="climb"><div class="sunb">' + Art.ic('sun') + 'El mundo real' + Art.ic('sun') + '</div><div class="cols">';
+    for (var k = 0; k < S.nTeams; k++) h += '<div class="col" style="--tc:' + team(k).color + '"><div class="track"><div class="climber" data-h="' + (S.score[k] / mx * frac * 78) + '">' + coinT(k) + '<b>' + fmt(S.score[k]) + '</b></div></div><div class="tn">' + team(k).name + '</div><div class="tm">' + members(k).map(function (i) { return esc(S.roster[i].n); }).join(', ') + '</div></div>';
+    stage.innerHTML = h + '</div><div class="cavef">El fondo de la caverna</div></div>';
     setTimeout(function () { [].forEach.call(stage.querySelectorAll('.climber'), function (e) { e.style.bottom = e.getAttribute('data-h') + '%'; }); }, 80);
   }
   function vPodium() {
-    var rk = ranking(), ord = [rk[1], rk[0], rk[2]], hs = [15, 21, 11.5], md = ['🥈', '🥇', '🥉'], w = team(rk[0]);
-    var h = '<div class="center"><div class="intro"><div class="rn">¡Han salido de la caverna!</div></div><h1 class="glow" style="font-size:5rem">' + w.emoji + ' Equipo ' + w.name + '</h1><div class="pod">';
-    ord.forEach(function (k, j) { if (k === undefined) return; h += '<div style="--tc:' + team(k).color + ';height:' + hs[j] + 'rem;animation-delay:' + [0.6, 1.4, 0][j] + 's"><span>' + md[j] + '</span>' + team(k).emoji + ' ' + team(k).name + '<small>' + fmt(S.score[k]) + '</small></div>'; });
+    var rk = ranking(), ord = [rk[1], rk[0], rk[2]], hs = [12.5, 16.5, 10], md = ['II', 'I', 'III'], w = team(rk[0]);
+    var h = '<div class="center"><div class="kick">Sale de la caverna</div><h1>Equipo <em style="color:' + w.color + '">' + w.name + '</em></h1><div class="pod">';
+    ord.forEach(function (k, j) { if (k === undefined) return; h += '<div class="pl" style="height:' + hs[j] + 'rem;animation-delay:' + [0.6, 1.4, 0][j] + 's">' + coinT(k) + '<u>' + team(k).name + '</u><small>' + fmt(S.score[k]) + '</small><i>' + md[j] + '</i></div>'; });
     h += '</div>';
     var top = present().filter(function (i) { return S.roster[i].pts > 0; }).sort(function (a, b) { return S.roster[b].pts - S.roster[a].pts; }).slice(0, 3);
-    if (top.length) h += '<div class="count" style="margin-top:.6rem">Mentes más despiertas</div><div class="mvp">' + top.map(function (i, j) { return '<div>' + ['🥇', '🥈', '🥉'][j] + ' ' + esc(S.roster[i].n) + ' · ' + fmt(S.roster[i].pts) + '</div>'; }).join('') + '</div>';
+    if (top.length) h += '<div class="kick" style="font-size:1.1rem;margin-top:.8rem">Mentes más despiertas</div><div class="mvp">' + top.map(function (i, j) { return '<div><i>' + ['I', 'II', 'III'][j] + '</i> ' + esc(S.roster[i].n) + ' · ' + fmt(S.roster[i].pts) + '</div>'; }).join('') + '</div>';
     stage.innerHTML = h + '</div>';
   }
   function vReport() {
     var t = [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0]];
     S.qlog.forEach(function (q) { if (!q.board) { t[q.t][0] += q.ok; t[q.t][1] += q.n; } });
-    var h = '<div class="rep"><div class="bx"><h3>📊 Cómo lo lleva la clase, tema a tema</h3>';
-    for (var i = 1; i <= 4; i++) { var p = t[i][1] ? Math.round(100 * t[i][0] / t[i][1]) : 0; h += '<div class="tb">Tema ' + i + ' · ' + C.temas[i] + ' — <b>' + (t[i][1] ? p + '%' : 'sin datos') + '</b><div class="bg"><i class="' + (p < 50 ? 'low' : p < 70 ? 'mid' : '') + '" style="width:' + p + '%"></i></div></div>'; }
-    h += '<div class="hint" style="margin-top:auto">📱 Cada uno tiene en su móvil su informe personal: qué tema domina y cuál le conviene repasar.</div></div><div class="bx"><h3>🎯 Lo que más costó (para repasar ahora)</h3>';
+    var h = '<div class="rep"><div class="bx"><h3>Cómo lo lleva la clase, tema a tema</h3>';
+    for (var i = 1; i <= 4; i++) { var p = t[i][1] ? Math.round(100 * t[i][0] / t[i][1]) : 0; h += '<div class="tb">Tema ' + i + ' · ' + C.temas[i] + '<b>' + (t[i][1] ? p + '%' : '—') + '</b><div class="bg"><i class="' + (p < 50 ? 'low' : p < 70 ? 'mid' : '') + '" style="width:' + p + '%"></i></div></div>'; }
+    h += '<div class="hint" style="margin-top:auto">' + Art.ic('phone') + ' Cada uno tiene en su móvil su informe personal: qué tema domina y cuál le conviene repasar.</div></div><div class="bx"><h3>Lo que más costó · para repasar ahora</h3>';
     var worst = S.qlog.filter(function (q) { return q.n >= 1 && !q.board && q.ok / q.n < 0.9; }).sort(function (a, b) { return a.ok / a.n - b.ok / b.n; }).slice(0, 4);
-    worst.forEach(function (q) { h += '<div class="fail">' + esc(q.q.length > 150 ? q.q.slice(0, 150) + '…' : q.q) + '<br><b>→ ' + esc(q.a) + '</b> <span style="color:var(--dim)">(' + Math.round(100 * q.ok / q.n) + '% de aciertos)</span></div>'; });
-    if (!worst.length) h += '<div class="hint" style="font-size:1.6rem">' + (S.qlog.length ? '🌟 Nada por debajo del 90 % de aciertos. ¡Van sobrados!' : 'Sin datos de móviles en esta partida.') + '</div>';
+    worst.forEach(function (q) { h += '<div class="fail">' + esc(q.q.length > 150 ? q.q.slice(0, 150) + '…' : q.q) + '<br><b>' + esc(q.a) + '</b> <span style="color:var(--dim)">(' + Math.round(100 * q.ok / q.n) + '% de aciertos)</span></div>'; });
+    if (!worst.length) h += '<div class="hint" style="font-size:1.6rem">' + (S.qlog.length ? 'Nada por debajo del 90 % de aciertos. Van sobrados.' : 'Sin datos de móviles en esta partida.') + '</div>';
     stage.innerHTML = h + '</div></div>';
   }
   function vBye() {
-    stage.innerHTML = '<div class="center"><div style="font-size:6rem">☀️</div><blockquote class="glow">«Una vida sin examen no es vida»</blockquote><div class="intro"><div class="sb">Sócrates no hablaba de este examen… pero para este también vale:<br>comprueba si lo que crees saber aguanta una pregunta.</div></div><h1 style="font-size:3.4rem;margin-top:1rem">¡Mucha suerte! 🍀</h1></div>';
+    stage.innerHTML = '<div class="center"><div class="seal" style="font-size:4.5rem">' + Art.coin('sun', 'var(--gold)') + '</div><blockquote>«Una vida sin examen no es vida»</blockquote><div class="kick">Sócrates · Apología</div><div class="sub" style="max-width:62rem">No hablaba de este examen, pero para este también vale: comprueba si lo que crees saber aguanta una pregunta.</div><h1 style="font-size:3rem;margin-top:.6rem">Mucha <em>suerte</em></h1></div>';
   }
 
   /* ---------- menú y acciones ---------- */
   function closeMenu() { menu.className = ''; }
   function openMenu() {
     var h = '<h4>Puntos a mano</h4>';
-    for (var k = 0; k < S.nTeams; k++) h += '<div class="tr"><span>' + team(k).emoji + ' ' + team(k).name + ' · ' + fmt(S.score[k]) + '</span><button class="b sm" data-a="pt" data-k="' + k + '" data-n="-100">−100</button><button class="b sm" data-a="pt" data-k="' + k + '" data-n="100">+100</button><button class="b sm" data-a="pt" data-k="' + k + '" data-n="300">+300</button></div>';
-    h += '<h4>Partida</h4><div class="g"><button class="b sm" data-a="back">⏮ Atrás</button><button class="b sm" data-a="skip">⏭ Saltar ronda</button><button class="b sm" data-a="snd">' + (Sfx.on ? '🔊 Sonido' : '🔇 Silencio') + '</button><button class="b sm" data-a="fs">⛶ Pantalla completa</button><button class="b sm" data-a="reset" style="color:var(--bad)">↺ Nueva partida</button></div>';
+    for (var k = 0; k < S.nTeams; k++) h += '<div class="tr"><span>' + coinT(k) + team(k).name + ' · ' + fmt(S.score[k]) + '</span><button class="b sm" data-a="pt" data-k="' + k + '" data-n="-100">−100</button><button class="b sm" data-a="pt" data-k="' + k + '" data-n="100">+100</button><button class="b sm" data-a="pt" data-k="' + k + '" data-n="300">+300</button></div>';
+    h += '<h4>Partida</h4><div class="g"><button class="b sm" data-a="back">Atrás</button><button class="b sm" data-a="skip">Saltar ronda</button><button class="b sm" data-a="snd">Sonido: ' + (Sfx.on ? 'sí' : 'no') + '</button><button class="b sm" data-a="fs">Pantalla completa</button><button class="b sm" data-a="reset" style="color:var(--bad)">Nueva partida</button></div>';
     menu.innerHTML = h; menu.className = 'on';
   }
   function modal(html) { ov.innerHTML = '<div class="modal"><div class="in">' + html + '</div></div>'; }
@@ -608,13 +607,13 @@
       var W = cv.width, H = cv.height, i, p;
       if (fxMode === 'matrix') {
         var fs = Math.max(14, Math.round(H / 45)); if (!cols.length) for (i = 0; i < W / fs; i++) cols.push(Math.random() * H / fs);
-        g.fillStyle = 'rgba(14,11,22,.12)'; g.fillRect(0, 0, W, H); g.fillStyle = 'rgba(0,255,90,.35)'; g.font = fs + 'px monospace';
+        g.fillStyle = 'rgba(20,16,12,.14)'; g.fillRect(0, 0, W, H); g.fillStyle = 'rgba(60,200,110,.22)'; g.font = fs + 'px monospace';
         for (i = 0; i < cols.length; i++) { g.fillText(String.fromCharCode(0x30A0 + Math.random() * 96), i * fs, cols[i] * fs); if (cols[i] * fs > H && Math.random() > 0.96) cols[i] = 0; cols[i]++; }
         return;
       }
       g.clearRect(0, 0, W, H); cols = [];
-      var conf = fxMode === 'confetti', max = conf ? 140 : 26;
-      if (P.length < max && Math.random() < (conf ? 0.9 : 0.25)) P.push(conf ? { x: Math.random() * W, y: -10, vx: (Math.random() - 0.5) * 3, vy: 2 + Math.random() * 4, s: 5 + Math.random() * 8, c: pick(['#ffd95a', '#ff7043', '#42a5f5', '#8bc34a', '#ba8cff', '#fff']), a: 1, conf: 1 } : { x: Math.random() * W, y: H + 5, vx: (Math.random() - 0.5) * 0.6, vy: -(0.5 + Math.random() * 1.4), s: 1.5 + Math.random() * 2.5, c: '#ffb347', a: 0.7 });
+      var conf = fxMode === 'confetti', max = conf ? 110 : 0;
+      if (P.length < max && Math.random() < (conf ? 0.9 : 0.25)) P.push(conf ? { x: Math.random() * W, y: -10, vx: (Math.random() - 0.5) * 3, vy: 2 + Math.random() * 4, s: 5 + Math.random() * 8, c: pick(['#e3b24a', '#cf5f2e', '#f2e4c9', '#e58a52', '#97a84a']), a: 1, conf: 1 } : { x: Math.random() * W, y: H + 5, vx: (Math.random() - 0.5) * 0.6, vy: -(0.5 + Math.random() * 1.4), s: 1.5 + Math.random() * 2.5, c: '#ffb347', a: 0.7 });
       for (i = P.length - 1; i >= 0; i--) {
         p = P[i]; p.x += p.vx; p.y += p.vy; if (!p.conf) p.a -= 0.004;
         if (p.a <= 0 || p.y > H + 20 || p.y < -20 || (p.conf && !conf)) { P.splice(i, 1); continue; }

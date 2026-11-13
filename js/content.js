@@ -1,25 +1,25 @@
 /* Contenido del juego. t = tema (1-4) de los apuntes. En cada pregunta, la respuesta correcta es SIEMPRE la primera opción (el juego las baraja). */
 window.CONTENT = {
   teams: [
-    { name: 'Fuego', emoji: '🔥', color: '#ff7043' },
-    { name: 'Agua', emoji: '💧', color: '#42a5f5' },
-    { name: 'Aire', emoji: '💨', color: '#4dd0c4' },
-    { name: 'Tierra', emoji: '🌱', color: '#8bc34a' },
-    { name: 'Átomos', emoji: '⚛️', color: '#ba8cff' }
+    { name: 'Fuego', icon: 'flame', color: '#e2552f' },
+    { name: 'Agua', icon: 'drop', color: '#4c9cc4' },
+    { name: 'Aire', icon: 'wind', color: '#eadbb8' },
+    { name: 'Tierra', icon: 'leaf', color: '#97a84a' },
+    { name: 'Átomos', icon: 'atom', color: '#b07cc0' }
   ],
 
   rounds: [
-    { n: 1, icon: '⚡', title: 'Atrévete a saber', sub: 'Calentamiento',
+    { n: 1, icon: 'bolt', title: 'Atrévete a saber', sub: 'Calentamiento',
       how: ['Responde en tu móvil.', 'Acertar da puntos; acertar rápido, más.', 'Tu equipo suma la media de sus jugadores: nadie se queda fuera.'] },
-    { n: 2, icon: '🥊', title: 'Duelos relámpago', sub: 'Dos opciones, siete segundos',
+    { n: 2, icon: 'duel', title: 'Duelos relámpago', sub: 'Dos opciones, siete segundos',
       how: ['Una frase, dos bandos.', 'Solo 7 segundos: sin pensarlo demasiado… o sí.', 'Ojo, que hay trampas.'] },
-    { n: 3, icon: '🖐️', title: 'Manos a la pantalla', sub: 'Un equipo entero en la PIM',
+    { n: 3, icon: 'hand', title: 'Manos a la pantalla', sub: 'Un equipo entero en la PIM',
       how: ['Cada equipo sale a la pantalla y coloca las tarjetas en su sitio.', 'Cada fallo resta. Terminar rápido suma.', 'Los demás apuestan desde el móvil: ¿cuántos fallos tendrán?'] },
-    { n: 4, icon: '🕵️', title: 'Detectores de bulos', sub: 'Se puede (y se debe) investigar',
+    { n: 4, icon: 'lens', title: 'Detectores de bulos', sub: 'Se puede (y se debe) investigar',
       how: ['Verán una afirmación. Tienen 50 segundos.', 'Pueden buscar en internet y discutirlo con el equipo.', '¿Es verdad, es falso… o no se puede comprobar? No vale la velocidad: vale acertar.'] },
-    { n: 5, icon: '🏛️', title: 'El ágora', sub: 'Aquí no hay respuesta correcta: hay razones',
+    { n: 5, icon: 'temple', title: 'El ágora', sub: 'Aquí no hay respuesta correcta: hay razones',
       how: ['Vota en tu móvil lo que piensas de verdad.', 'El oráculo de Delfos elegirá quién defiende cada postura.', 'Una buena razón da puntos extra al equipo.'] },
-    { n: 6, icon: '☀️', title: 'La salida', sub: '¿Quién soy? · Puntos dobles',
+    { n: 6, icon: 'sun', title: 'La salida', sub: '¿Quién soy? · Puntos dobles',
       how: ['Un filósofo se describe con 4 pistas, de difícil a fácil.', 'Cuanto antes respondas, más puntos… pero solo tienes UN intento.', 'Última oportunidad para salir de la caverna.'] }
   ],
 
@@ -59,7 +59,7 @@ window.CONTENT = {
 
   /* Ronda 2 — duelos (7 s). a = índice del bando correcto */
   duels: [
-    { sides: ['MITO', 'LOGOS'], icons: ['⚡', '🧠'], t: 2, items: [
+    { sides: ['MITO', 'LOGOS'], icons: ['bolt', 'sun'], t: 2, items: [
       { s: '«El Teide escupe fuego porque Guayota está furioso».', a: 0, e: 'Una voluntad lo explica todo: mito.' },
       { s: '«El magma sube porque es menos denso que la roca que lo rodea».', a: 1, e: 'Causas naturales que se pueden comprobar.' },
       { s: '«Siempre se ha contado así, y eso no se discute».', a: 0, e: 'Tradición y autoridad: no se discute.' },
@@ -67,7 +67,7 @@ window.CONTENT = {
       { s: '«Todo está hecho de agua, porque todo lo vivo la necesita».', a: 1, e: '¡Trampa! Tales se equivocó, pero dio una razón sin dioses: es logos.' },
       { s: '«Este año no llueve: es un castigo».', a: 0, e: '¿Castigo de quién? Una voluntad: mito.' }
     ] },
-    { sides: ['SOFISTAS', 'SÓCRATES'], icons: ['💰', '❓'], t: 3, items: [
+    { sides: ['SOFISTAS', 'SÓCRATES'], icons: ['coin', 'ask'], t: 3, items: [
       { s: '«Te enseño a ganar cualquier juicio. Son 50 dracmas».', a: 0, e: 'Los sofistas cobraban por enseñar retórica.' },
       { s: '«No me des ejemplos: dime QUÉ ES la justicia».', a: 1, e: 'Sócrates busca definiciones.' },
       { s: '«Lo justo en Atenas no tiene por qué serlo en Esparta».', a: 0, e: 'Relativismo: las leyes (nomos) son acuerdos de cada pueblo.' },
@@ -76,7 +76,7 @@ window.CONTENT = {
       { s: '«El hombre es la medida de todas las cosas».', a: 0, e: 'Protágoras, el sofista más famoso.' },
       { s: '«Una vida sin examen no es vida».', a: 1, e: 'Sócrates, en su propio juicio.' }
     ] },
-    { sides: ['HERÁCLITO', 'PARMÉNIDES'], icons: ['🔥', '🗿'], t: 2, items: [
+    { sides: ['HERÁCLITO', 'PARMÉNIDES'], icons: ['flame', 'sphere'], t: 2, items: [
       { s: '«Todo está en continuo devenir, como el fuego».', a: 0, e: 'Heráclito: todo cambia.' },
       { s: '«Lo que es, es, y no puede dejar de ser».', a: 1, e: 'Parménides: el ser no cambia.' },
       { s: '«El cambio no es un caos: sigue una medida, el logos».', a: 0, e: 'Heráclito: cambia, pero con orden.' },
@@ -99,7 +99,7 @@ window.CONTENT = {
   ],
 
   /* Ronda 4 — bulos (50 s, se puede buscar). a: 0 = verdad comprobada, 1 = falso/refutado, 2 = no se puede comprobar */
-  buloOpts: ['✅ Es verdad: está comprobado', '❌ Es falso: está refutado', '🤷 No se puede comprobar'],
+  buloOpts: ['Es verdad: está comprobado', 'Es falso: está refutado', 'No se puede comprobar'],
   bulos: [
     { t: 4, s: '«En la cima del Teide, el agua hierve a menos de 90 °C».', a: 0,
       e: 'Verdad: a 3.715 m hay menos presión y el agua hierve a unos 88 °C. Y lo mejor: cualquiera puede subir con un termómetro y comprobarlo.', k: 'Pregunta 1: ¿lo puede comprobar cualquiera, sin dones especiales?' },
@@ -116,13 +116,13 @@ window.CONTENT = {
   /* Ronda 5 — dilemas */
   polls: [
     { t: 2, theme: 'matrix', q: 'Morfeo te ofrece dos pastillas. ¿Cuál te tomas?',
-      o: ['🔴 ROJA: conocer la verdad, aunque sea dura', '🔵 AZUL: seguir en una ilusión cómoda y feliz'],
+      o: ['ROJA: conocer la verdad, aunque sea dura', 'AZUL: seguir en una ilusión cómoda y feliz'],
       think: ['¿Qué haría el prisionero que salió de la caverna de Platón?', '¿Qué diría Parménides de lo que nos muestran los sentidos?', 'Y si la ilusión te hace feliz… ¿por qué importa la verdad?'] },
     { t: 4, theme: 'gattaca', q: 'Como en Gattaca: una empresa lee tu ADN y contrata solo a quien tiene «los mejores genes». ¿Es justo?',
-      o: ['👍 Sí: es elegir con datos', '👎 No: un dato no mide a una persona', '🤔 Depende'],
+      o: ['Sí: es elegir con datos', 'No: un dato no mide a una persona', 'Depende'],
       think: ['¿Qué pueden estimar los datos genéticos y qué no pueden determinar?', '¿Esta pregunta se puede resolver midiendo algo en un laboratorio?', 'Entonces… ¿es una pregunta científica o filosófica?'] },
     { t: 3, theme: 'agora', q: 'Protágoras contra Sócrates. ¿Con quién estás?',
-      o: ['⚖️ Protágoras: cada uno tiene su verdad', '🔎 Sócrates: hay verdades que valen para todos, y hay que buscarlas'],
+      o: ['Protágoras: cada uno tiene su verdad', 'Sócrates: hay verdades que valen para todos, y hay que buscarlas'],
       think: ['Si «todo es relativo»… ¿esa frase también es relativa?', 'Si cada uno tiene su verdad, ¿para qué sirve discutir?', '¿Las leyes son nomos (acuerdo) o physis (naturaleza)?'] }
   ],
 
