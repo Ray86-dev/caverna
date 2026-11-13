@@ -9,4 +9,4 @@ Seis rondas por equipos: test, duelos relámpago, tableros táctiles, detectores
 
 La sincronización usa un canal en tiempo real (Supabase Realtime, solo mensajes efímeros). No hay base de datos ni se guarda ningún dato de los participantes. La lista de clase, si se usa, vive solo en el navegador del docente.
 
-Música y efectos generados con WebAudio; sin recursos de terceros salvo `supabase-js` y `qrcode-generator` (MIT), incluidos en `vendor/`.
+Música y efectos generados con WebAudio; sin recursos de terceros salvo `supabase-js`, `qrcode-generator` y `three.js` (MIT), incluidos en `vendor/`. La pantalla principal dibuja una escena 3D (la caverna de Platón) que se desactiva sola en equipos poco potentes.

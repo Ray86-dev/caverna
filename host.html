@@ -6,13 +6,34 @@
 <meta name="robots" content="noindex">
 <title>Sal de la caverna · Pantalla</title>
 <link rel="stylesheet" href="css/fonts.css?v=5">
-<link rel="stylesheet" href="css/theme.css?v=5">
+<link rel="stylesheet" href="css/theme.css?v=6">
 <style>
 html{font-size:1.78vh;font-size:min(1vw,1.78vh);height:100%;--lum:0}
 body{height:100%;overflow:hidden;background:var(--glaze);color:var(--slip);font-family:var(--f-body);font-weight:500;user-select:none;-webkit-user-select:none}
 body::before{content:"";position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;
   background:radial-gradient(ellipse 60% 45% at 50% -12%,rgba(227,178,74,calc(.05 + var(--lum)*.3)),transparent 70%),radial-gradient(ellipse 80% 55% at 50% 118%,rgba(207,95,46,.28),transparent 70%),var(--grain)}
+#gl{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;display:block}
+#scrim{position:fixed;top:0;left:0;right:0;bottom:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse 90% 85% at 50% 50%,rgba(14,10,7,var(--scrim,0)),rgba(14,10,7,calc(var(--scrim,0)*.6 + .4)));display:none}
+body.g3d #scrim{display:block}
+body.g3d::before{display:none}
+body.g3d #top{background:linear-gradient(180deg,rgba(14,10,7,.88),rgba(14,10,7,.6))}
+body.g3d #bar{background:linear-gradient(0deg,rgba(14,10,7,.85),rgba(14,10,7,0))}
+body.g3d .lobby .l{background:rgba(20,16,12,.8);border:.1rem solid var(--line);padding:1rem 0}
+body.g3d .center{text-shadow:0 .15rem 1.2rem rgba(0,0,0,.9)}
+body.g3d .intro li{background:rgba(20,16,12,.7)}
 #fx{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0}
+#flash{position:fixed;top:0;left:0;right:0;bottom:0;background:#fff8e6;z-index:60;pointer-events:none;opacity:0}
+#flash.go{animation:flash 2.2s ease-out}
+@keyframes flash{0%{opacity:0}18%{opacity:1}45%{opacity:1}100%{opacity:0}}
+#stage>*{animation:enter .45s ease-out}
+@keyframes enter{from{opacity:0;transform:translateY(1rem)}}
+#stage>.lab3d{position:fixed;transform:translate(-50%,0);text-align:center;white-space:nowrap;text-shadow:0 .1rem .6rem #000,0 0 1.4rem #000;pointer-events:none;animation:none}
+.lab3d b{display:block;font-family:var(--f-title);font-weight:900;font-size:1.9rem;color:var(--slip);line-height:1.1}
+.lab3d u{display:block;text-decoration:none;font-family:var(--f-title);font-weight:800;font-size:1.15rem;letter-spacing:.18em;text-transform:uppercase;color:var(--tc)}
+.lab3d small{display:block;font-size:.95rem;color:var(--slip2);opacity:.9;white-space:normal;max-width:11.5rem;margin:0 auto;line-height:1.2}
+.lab3d i{font-family:var(--f-title);font-style:normal;font-weight:900;font-size:1.5rem;color:var(--gold);display:block}
+.topt{text-align:center;display:flex;flex-direction:column;gap:.6rem;align-items:center;text-shadow:0 .15rem 1.2rem rgba(0,0,0,.85)}
+.bott{margin-top:auto;display:flex;flex-direction:column;gap:.5rem;align-items:center;background:rgba(14,10,7,.78);padding:.8rem 2.4rem;align-self:center}
 #app{position:relative;z-index:1;height:100%;display:flex;flex-direction:column}
 #top{height:5.2rem;display:flex;align-items:center;gap:1.4rem;padding:0 2rem;flex:none}
 #rl{font-family:var(--f-title);font-weight:800;font-size:1.45rem;letter-spacing:.12em;text-transform:uppercase;color:var(--clay2);white-space:nowrap;display:flex;align-items:center;gap:.7rem}
@@ -241,7 +262,10 @@ blockquote{font-family:var(--f-quote);font-style:italic;font-size:4rem;font-weig
 </style>
 </head>
 <body>
+<canvas id="gl"></canvas>
+<div id="scrim"></div>
 <canvas id="fx"></canvas>
+<div id="flash"></div>
 <div id="app">
   <div id="top"><div id="rl"></div><div id="chips"></div><div id="meta"></div></div>
   <div class="greca"></div>
@@ -252,10 +276,12 @@ blockquote{font-family:var(--f-quote);font-style:italic;font-size:4rem;font-weig
 <div id="ov"></div>
 <script src="vendor/supabase.js"></script>
 <script src="vendor/qrcode.js"></script>
-<script src="js/art.js?v=5"></script>
-<script src="js/content.js?v=5"></script>
-<script src="js/net.js?v=5"></script>
-<script src="js/audio.js?v=5"></script>
-<script src="js/host.js?v=5"></script>
+<script src="vendor/three.min.js"></script>
+<script src="js/art.js?v=6"></script>
+<script src="js/content.js?v=6"></script>
+<script src="js/net.js?v=6"></script>
+<script src="js/audio.js?v=6"></script>
+<script src="js/scene.js?v=6"></script>
+<script src="js/host.js?v=6"></script>
 </body>
 </html>

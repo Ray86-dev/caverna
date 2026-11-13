@@ -36,5 +36,5 @@
     }
     return '<svg class="laurel" viewBox="0 0 200 200" aria-hidden="true" fill="currentColor"><path d="M40 176q60 22 120 0" fill="none" stroke="currentColor" stroke-width="4"/>' + h + '</svg>';
   }
-  window.Art = { ic: ic, coin: coin, laurel: laurel };
+  window.Art = { ic: ic, coin: coin, laurel: laurel, raw: function (name) { return (P[name] || P.sphere).replace(/(\d)\.(\d)00/g, '$1.$2'); } };
 })();

@@ -1,7 +1,8 @@
 /* Pantalla principal (PIM). Es la autoridad del juego: los móviles solo envían respuestas. */
 (function () {
   'use strict';
-  var C = window.CONTENT, Sfx = window.Sfx, Net = window.Net, Art = window.Art;
+  var C = window.CONTENT, Sfx = window.Sfx, Net = window.Net, Art = window.Art, S3 = window.Scene3D || { on: false };
+  var root = document.documentElement;
   var ROM = ['', 'I', 'II', 'III', 'IV', 'V', 'VI'], GL = ['Α', 'Β', 'Γ', 'Δ'];
   var LS = 'caverna-host-v3', LSR = 'caverna-roster';
   var PTS_WHO = [1500, 1000, 600, 300];
@@ -100,7 +101,7 @@
     music(); render(); pub(); bots();
     if (st.type === 'intro') Sfx.whoosh();
     if (st.type === 'scores') Sfx.reveal();
-    if (st.type === 'podium') { Sfx.drum(1.6); setTimeout(function () { Sfx.fanfare(); fxMode = 'confetti'; }, 1700); }
+    if (st.type === 'podium') { if (S3.on) { var fe = document.getElementById('flash'); fe.className = ''; void fe.offsetWidth; fe.className = 'go'; } Sfx.drum(1.6); setTimeout(function () { Sfx.fanfare(); fxMode = 'confetti'; }, 1700); }
   }
   function music() {
     var st = step(), k = null;
@@ -198,7 +199,7 @@
     if (st.type !== 'poll') S.qlog.push({ q: st.q || ('¿Quién soy? ' + st.clues[3]), a: st.type === 'who' ? C.names[st.a] : st.opts[st.correct], t: st.t, ok: ok, n: n });
     S.sub = 'reveal';
     if (st.kind === 'duel') S.cur.auto = now() + 4200;
-    if (st.type === 'poll') Sfx.reveal(); else if (n && ok >= n / 2) Sfx.ok(); else Sfx.bad();
+    if (st.type === 'poll') Sfx.reveal(); else if (n && ok >= n / 2) { Sfx.ok(); if (S3.on) S3.flare(); } else Sfx.bad();
     music(); render(); pub();
   }
 
@@ -306,7 +307,7 @@
   function render() {
     var st = step(), f = { lobby: vLobby, intro: vIntro, mcq: vMcq, board: vBoard, poll: vPoll, who: vWho, scores: vScores, podium: vPodium, report: vReport, bye: vBye }[S.phase === 'lobby' ? 'lobby' : st.type];
     lastSec = -1; closeMenu();
-    f(st); renderTop(); renderBar();
+    sync3d(); f(st); renderTop(); renderBar();
   }
 
   function vLobby() {
@@ -497,22 +498,59 @@
     stage.innerHTML = h + (rv ? gainsHtml() : '') + '</div></div>';
   }
 
+  /* ----- escena 3D ----- */
+  function prog3d(r) {
+    var mx = Math.max.apply(null, S.score.slice(0, S.nTeams).concat([1])), frac = Math.max(0, Math.min(1, r / 6)), a = [];
+    for (var k = 0; k < S.nTeams; k++) a.push(S.score[k] / mx * frac);
+    return a;
+  }
+  function sync3d() {
+    var st = step(), lobby = S.phase === 'lobby', t = st.type, end = t === 'podium' || t === 'report' || t === 'bye', sc;
+    S3.onFrame = null;
+    if (!S3.on) { root.style.setProperty('--scrim', 0); return; }
+    if (S.teamsMade || !lobby) S3.setTeams(S.nTeams, C.teams);
+    S3.setMode(lobby ? 'lobby' : t === 'scores' ? 'scores' : end ? 'out' : 'play', st.r || 1);
+    sc = lobby ? 0.2 : t === 'intro' ? 0.42 : (t === 'scores' || t === 'podium') ? 0 : t === 'bye' ? 0.3 : t === 'report' ? 0.82 : (t === 'board' && S.sub === 'ready') ? 0.5 : 0.76;
+    root.style.setProperty('--scrim', sc);
+    if (lobby) S3.setProgress([], true);
+    else if (end) S3.setPodium(ranking().slice(0, 3));
+    else if (t !== 'scores') S3.setProgress(prog3d((st.r || 1) - 1), true);
+  }
+  function labels(kind, n) {
+    S3.onFrame = function () {
+      for (var i = 0; i < n; i++) { var e = document.getElementById('lab' + i), p = S3.project(kind, i); if (e && p) { e.style.left = p.x + 'px'; e.style.top = p.y + 'px'; e.style.visibility = 'visible'; } }
+    };
+  }
+
   /* ----- clasificación ----- */
   function vScores(st) {
+    var k, h;
+    if (S3.on) {
+      h = '<div class="topt"><div class="kick">Clasificación · Ronda ' + ROM[st.r] + ' de VI</div></div>';
+      for (k = 0; k < S.nTeams; k++) h += '<div class="lab3d" id="lab' + k + '" style="visibility:hidden;--tc:' + team(k).color + '"><b>' + fmt(S.score[k]) + '</b><u>' + team(k).name + '</u><small>' + members(k).map(function (i) { return esc(S.roster[i].n); }).join(', ') + '</small></div>';
+      stage.innerHTML = h; S3.setProgress(prog3d(st.r - 1), true); labels('coin', S.nTeams);
+      setTimeout(function () { if (step() === st) S3.setProgress(prog3d(st.r)); }, 900);
+      return;
+    }
     var mx = Math.max.apply(null, S.score.slice(0, S.nTeams).concat([1])), frac = Math.min(1, st.r / 6);
-    var h = '<div class="climb"><div class="sunb">' + Art.ic('sun') + 'El mundo real' + Art.ic('sun') + '</div><div class="cols">';
-    for (var k = 0; k < S.nTeams; k++) h += '<div class="col" style="--tc:' + team(k).color + '"><div class="track"><div class="climber" data-h="' + (S.score[k] / mx * frac * 78) + '">' + coinT(k) + '<b>' + fmt(S.score[k]) + '</b></div></div><div class="tn">' + team(k).name + '</div><div class="tm">' + members(k).map(function (i) { return esc(S.roster[i].n); }).join(', ') + '</div></div>';
+    h = '<div class="climb"><div class="sunb">' + Art.ic('sun') + 'El mundo real' + Art.ic('sun') + '</div><div class="cols">';
+    for (k = 0; k < S.nTeams; k++) h += '<div class="col" style="--tc:' + team(k).color + '"><div class="track"><div class="climber" data-h="' + (S.score[k] / mx * frac * 78) + '">' + coinT(k) + '<b>' + fmt(S.score[k]) + '</b></div></div><div class="tn">' + team(k).name + '</div><div class="tm">' + members(k).map(function (i) { return esc(S.roster[i].n); }).join(', ') + '</div></div>';
     stage.innerHTML = h + '</div><div class="cavef">El fondo de la caverna</div></div>';
     setTimeout(function () { [].forEach.call(stage.querySelectorAll('.climber'), function (e) { e.style.bottom = e.getAttribute('data-h') + '%'; }); }, 80);
   }
   function vPodium() {
-    var rk = ranking(), ord = [rk[1], rk[0], rk[2]], hs = [12.5, 16.5, 10], md = ['II', 'I', 'III'], w = team(rk[0]);
-    var h = '<div class="center"><div class="kick">Sale de la caverna</div><h1>Equipo <em style="color:' + w.color + '">' + w.name + '</em></h1><div class="pod">';
-    ord.forEach(function (k, j) { if (k === undefined) return; h += '<div class="pl" style="height:' + hs[j] + 'rem;animation-delay:' + [0.6, 1.4, 0][j] + 's">' + coinT(k) + '<u>' + team(k).name + '</u><small>' + fmt(S.score[k]) + '</small><i>' + md[j] + '</i></div>'; });
-    h += '</div>';
+    var rk = ranking(), ord = [rk[1], rk[0], rk[2]], hs = [12.5, 16.5, 10], md = ['II', 'I', 'III'], w = team(rk[0]), h;
     var top = present().filter(function (i) { return S.roster[i].pts > 0; }).sort(function (a, b) { return S.roster[b].pts - S.roster[a].pts; }).slice(0, 3);
-    if (top.length) h += '<div class="kick" style="font-size:1.1rem;margin-top:.8rem">Mentes más despiertas</div><div class="mvp">' + top.map(function (i, j) { return '<div><i>' + ['I', 'II', 'III'][j] + '</i> ' + esc(S.roster[i].n) + ' · ' + fmt(S.roster[i].pts) + '</div>'; }).join('') + '</div>';
-    stage.innerHTML = h + '</div>';
+    var mvp = top.length ? '<div class="kick" style="font-size:1.1rem">Mentes más despiertas</div><div class="mvp">' + top.map(function (i, j) { return '<div><i>' + ['I', 'II', 'III'][j] + '</i> ' + esc(S.roster[i].n) + ' · ' + fmt(S.roster[i].pts) + '</div>'; }).join('') + '</div>' : '';
+    if (S3.on) {
+      h = '<div class="topt" style="text-shadow:none"><div class="kick" style="color:#7a3a14">Sale de la caverna</div><h1 style="color:#14100c">Equipo <em style="color:' + w.color + ';text-shadow:0 .12rem 0 #14100c,0 0 1.5rem rgba(255,255,255,.6)">' + w.name + '</em></h1></div>';
+      rk.slice(0, 3).forEach(function (k, j) { h += '<div class="lab3d" id="lab' + j + '" style="visibility:hidden;--tc:' + team(k).color + '"><i>' + ['I', 'II', 'III'][j] + '</i><u style="color:#fff">' + team(k).name + '</u><b>' + fmt(S.score[k]) + '</b></div>'; });
+      stage.innerHTML = h + (mvp ? '<div class="bott">' + mvp + '</div>' : ''); labels('pod', Math.min(3, rk.length));
+      return;
+    }
+    h = '<div class="center"><div class="kick">Sale de la caverna</div><h1>Equipo <em style="color:' + w.color + '">' + w.name + '</em></h1><div class="pod">';
+    ord.forEach(function (k, j) { if (k === undefined) return; h += '<div class="pl" style="height:' + hs[j] + 'rem;animation-delay:' + [0.6, 1.4, 0][j] + 's">' + coinT(k) + '<u>' + team(k).name + '</u><small>' + fmt(S.score[k]) + '</small><i>' + md[j] + '</i></div>'; });
+    stage.innerHTML = h + '</div>' + mvp + '</div>';
   }
   function vReport() {
     var t = [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0]];
@@ -534,7 +572,7 @@
   function openMenu() {
     var h = '<h4>Puntos a mano</h4>';
     for (var k = 0; k < S.nTeams; k++) h += '<div class="tr"><span>' + coinT(k) + team(k).name + ' · ' + fmt(S.score[k]) + '</span><button class="b sm" data-a="pt" data-k="' + k + '" data-n="-100">−100</button><button class="b sm" data-a="pt" data-k="' + k + '" data-n="100">+100</button><button class="b sm" data-a="pt" data-k="' + k + '" data-n="300">+300</button></div>';
-    h += '<h4>Partida</h4><div class="g"><button class="b sm" data-a="back">Atrás</button><button class="b sm" data-a="skip">Saltar ronda</button><button class="b sm" data-a="snd">Sonido: ' + (Sfx.on ? 'sí' : 'no') + '</button><button class="b sm" data-a="fs">Pantalla completa</button><button class="b sm" data-a="reset" style="color:var(--bad)">Nueva partida</button></div>';
+    h += '<h4>Partida</h4><div class="g"><button class="b sm" data-a="back">Atrás</button><button class="b sm" data-a="skip">Saltar ronda</button><button class="b sm" data-a="snd">Sonido: ' + (Sfx.on ? 'sí' : 'no') + '</button><button class="b sm" data-a="fs">Pantalla completa</button><button class="b sm" data-a="g3d">Escena 3D: ' + (S3.on ? 'sí' : 'no') + '</button><button class="b sm" data-a="reset" style="color:var(--bad)">Nueva partida</button></div>';
     menu.innerHTML = h; menu.className = 'on';
   }
   function modal(html) { ov.innerHTML = '<div class="modal"><div class="in">' + html + '</div></div>'; }
@@ -550,6 +588,7 @@
     else if (a === 'skip') { closeMenu(); skipRound(); }
     else if (a === 'back') { closeMenu(); if (S.idx > 0) go(S.idx - 1); }
     else if (a === 'snd') { Sfx.toggle(); openMenu(); }
+    else if (a === 'g3d') { if (S3.toggle) S3.toggle(); closeMenu(); }
     else if (a === 'fs') { try { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); } catch (e) {} closeMenu(); }
     else if (a === 'reset') { modal('<b>¿Empezar una partida nueva?</b><span class="hint">Se borran los puntos. La lista y el código de sala se mantienen.</span><div style="display:flex;gap:1rem;justify-content:flex-end"><button class="b sm" data-a="mclose">Cancelar</button><button class="b sm" data-a="reset2" style="color:var(--bad)">Sí, nueva partida</button></div>'); closeMenu(); }
     else if (a === 'reset2') { var code = S.code, ro = S.roster; S = fresh(); S.code = code; S.roster = ro.map(function (r) { var x = mk(r.n, r.g); x.out = r.out; x.cid = r.cid; x.seen = r.seen; return x; }); ov.innerHTML = ''; fxMode = 'embers'; music(); render(); pub(); }
@@ -627,6 +666,7 @@
 
   /* ---------- arranque ---------- */
   readHash();
+  if (S3.init) { S3.init(document.getElementById('gl')); S3.onChange = function () { if (S) render(); }; }
   var old = null; try { old = JSON.parse(localStorage.getItem(LS) || 'null'); } catch (e) {}
   if (old && old.code && old.roster && now() - (old.savedAt || old.t0 || now()) < 6 * 3600 * 1000 && old.phase !== 'lobby') {
     S = old; S.paused = 0; S.cur = S.cur || {};
