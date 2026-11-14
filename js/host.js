@@ -74,7 +74,7 @@
     st.push({ type: 'scores', r: 5 });
     intro(5);
     C.whoami.forEach(function (w) { st.push({ type: 'who', r: 6, t: w.t, a: C.names.indexOf(w.a), clues: w.clues, secs: 11 }); });
-    st.push({ type: 'podium', r: 6 }); st.push({ type: 'report', r: 6 }); st.push({ type: 'bye', r: 6 });
+    st.push({ type: 'podium', r: 6 }); st.push({ type: 'report', r: 6 }); st.push({ type: 'bye', r: 6 }); st.push({ type: 'party', r: 6 });
     return st;
   }
   function step() { return S.steps[S.idx] || { type: 'lobby' }; }
@@ -101,15 +101,17 @@
     music(); render(); pub(); bots();
     if (st.type === 'intro') Sfx.whoosh();
     if (st.type === 'scores') Sfx.reveal();
-    if (st.type === 'podium') { if (S3.on) { var fe = document.getElementById('flash'); fe.className = ''; void fe.offsetWidth; fe.className = 'go'; } Sfx.drum(1.6); setTimeout(function () { Sfx.fanfare(); fxMode = 'confetti'; }, 1700); }
+    if (st.type === 'party') partyStart();
+    if (st.type === 'podium') { if (S3.podiumGo) S3.podiumGo(); if (S3.on) { var fe = document.getElementById('flash'); fe.className = ''; void fe.offsetWidth; fe.className = 'go'; } Sfx.drum(1.6); setTimeout(function () { Sfx.fanfare(); fxMode = 'confetti'; }, 1700); }
   }
   function music() {
     var st = step(), k = null;
     if (S.phase === 'lobby') k = 'lobby';
     else if (S.sub === 'open') k = st.kind === 'duel' || st.type === 'board' ? 'fast' : st.type === 'poll' ? 'calm' : 'think';
     else if (st.type === 'poll') k = 'calm';
+    else if (st.type === 'party') k = 'fast';
     Sfx.loop(k);
-    fxMode = st.type === 'poll' && st.theme === 'matrix' ? 'matrix' : (st.type === 'podium' || st.type === 'bye') ? 'confetti' : 'embers';
+    fxMode = st.type === 'poll' && st.theme === 'matrix' ? 'matrix' : st.type === 'party' ? 'fire' : (st.type === 'podium' || st.type === 'bye') ? 'confetti' : 'embers';
     document.documentElement.style.setProperty('--lum', S.phase === 'lobby' ? 0 : Math.min(1, ((st.r || 1) - 1) / 5));
   }
 
@@ -121,6 +123,7 @@
     if (st.type === 'board') { if (S.sub === 'ready') return startBoard(); if (S.sub === 'open') return finishBoard(); }
     if (S.sub === 'open') return timeUp(true);
     if (S.idx < S.steps.length - 1) go(S.idx + 1);
+    else if (st.type === 'party') volley(16);
   }
   function nextLabel() {
     var st = step();
@@ -129,7 +132,8 @@
     if (st.type === 'board' && S.sub === 'ready') return '¡Ya!';
     if (st.type === 'board' && S.sub === 'open') return 'Terminar';
     if (S.sub === 'open') return st.type === 'poll' ? 'Ver resultado' : 'Resolver ya';
-    if (st.type === 'bye') return 'Fin';
+    if (st.type === 'bye') return '¡Fiesta final!';
+    if (st.type === 'party') return '¡Traca!';
     return 'Siguiente';
   }
   function togglePause() {
@@ -227,7 +231,7 @@
     if (st.type === 'poll') { p.q = st.q; p.opts = st.opts; if (rv) { p.counts = S.cur.counts; p.orac = S.cur.orac || []; } }
     if (st.type === 'who') { p.clues = st.clues.slice(0, rv ? 4 : S.cur.clue + 1); p.names = C.names; p.worth = PTS_WHO[S.cur.clue || 0]; if (rv) p.correct = st.a; }
     if (st.type === 'board') { p.team = st.team; p.title = C.boards[st.b].title; p.bet = S.sub === 'ready' || (S.sub === 'open' && now() - S.cur.t0 < 12000); if (rv) { p.err = S.cur.err; p.bucket = S.cur.bucket; p.bpts = S.cur.bpts; } }
-    if (st.type === 'podium' || st.type === 'report' || st.type === 'bye') { p.type = 'end'; p.rank = ranking(); p.temas = C.temas; }
+    if (st.type === 'podium' || st.type === 'report' || st.type === 'bye' || st.type === 'party') { if (st.type === 'party') p.party = 1; p.type = 'end'; p.rank = ranking(); p.temas = C.temas; }
     return p;
   }
   function ranking() { var a = []; for (var k = 0; k < S.nTeams; k++) a.push(k); return a.sort(function (x, y) { return S.score[y] - S.score[x]; }); }
@@ -266,6 +270,8 @@
       if (ri >= 0) { S.roster[ri].cid = ''; if (S.phase === 'lobby') render(); pubSoon(); }
     } else if (m.k === 'ans') {
       if (ri >= 0) accept(ri, m.val, m.idx);
+    } else if (m.k === 'fw') {
+      if (ri >= 0 && S.phase !== 'lobby' && step().type === 'party') { r = S.roster[ri]; if (now() - (r.fwT || 0) > 350) { r.fwT = now(); fwFrom(ri); } }
     } else if (m.k === 'hi') { pubSoon(); }
   }
 
@@ -275,7 +281,7 @@
     var st = step(), rl = document.getElementById('rl'), h = '';
     if (S.phase === 'lobby') rl.innerHTML = 'Sala <b>' + S.code + '</b>';
     else {
-      var R = C.rounds[(st.r || 1) - 1], inR = S.steps.filter(function (x) { return x.r === st.r && (x.type !== 'intro' && x.type !== 'scores' && x.type !== 'podium' && x.type !== 'report' && x.type !== 'bye'); });
+      var R = C.rounds[(st.r || 1) - 1], inR = S.steps.filter(function (x) { return x.r === st.r && (x.type !== 'intro' && x.type !== 'scores' && x.type !== 'podium' && x.type !== 'report' && x.type !== 'bye' && x.type !== 'party'); });
       var pos = inR.indexOf(st);
       rl.innerHTML = Art.ic(R.icon) + ' Ronda ' + ROM[st.r] + ' <small>' + esc(R.title) + (pos >= 0 ? ' · ' + (pos + 1) + ' de ' + inR.length : '') + '</small>';
     }
@@ -305,7 +311,7 @@
   function playUrl() { return location.href.replace(/[?#].*$/, '').replace(/host\.html$/, '') + '?s=' + S.code; }
 
   function render() {
-    var st = step(), f = { lobby: vLobby, intro: vIntro, mcq: vMcq, board: vBoard, poll: vPoll, who: vWho, scores: vScores, podium: vPodium, report: vReport, bye: vBye }[S.phase === 'lobby' ? 'lobby' : st.type];
+    var st = step(), f = { lobby: vLobby, intro: vIntro, mcq: vMcq, board: vBoard, poll: vPoll, who: vWho, scores: vScores, podium: vPodium, report: vReport, bye: vBye, party: vParty }[S.phase === 'lobby' ? 'lobby' : st.type];
     lastSec = -1; closeMenu();
     sync3d(); f(st); renderTop(); renderBar();
   }
@@ -530,15 +536,15 @@
     return a;
   }
   function sync3d() {
-    var st = step(), lobby = S.phase === 'lobby', t = st.type, end = t === 'podium' || t === 'report' || t === 'bye', sc;
-    S3.onFrame = null;
+    var st = step(), lobby = S.phase === 'lobby', t = st.type, end = t === 'podium' || t === 'report' || t === 'bye' || t === 'party', sc;
+    S3.onFrame = null; if (S3.party) S3.party(t === 'party' && S.phase !== 'lobby');
     if (!S3.on) { root.style.setProperty('--scrim', 0); return; }
     if (S.teamsMade || !lobby) S3.setTeams(S.nTeams, C.teams);
     var b3 = t === 'board' && S.sub !== 'ready' && !!S3.board && (S.sub === 'open' || S3.board.active);
     if (S3.board && S3.board.active && !b3) S3.board.stop();
     S3.setMode(lobby ? 'lobby' : t === 'scores' ? 'scores' : end ? 'out' : b3 ? 'table' : t === 'who' ? 'who' : 'play', st.r || 1);
     if (t === 'who') S3.who((S.cur.clue || 0) + 1, S.sub === 'reveal', C.names[st.a]);
-    sc = lobby ? 0.2 : t === 'intro' ? 0.42 : (t === 'scores' || t === 'podium') ? 0 : t === 'bye' ? 0.3 : t === 'report' ? 0.82 : (t === 'board' && S.sub === 'ready') ? 0.5 : 0.76;
+    sc = lobby ? 0.2 : t === 'intro' ? 0.42 : (t === 'scores' || t === 'podium' || t === 'party') ? 0 : t === 'bye' ? 0.3 : t === 'report' ? 0.82 : (t === 'board' && S.sub === 'ready') ? 0.5 : 0.76;
     if (b3) sc = S.sub === 'open' ? 0 : 0.55; if (t === 'who') sc = 0.08;
     root.style.setProperty('--scrim', sc);
     if (lobby) S3.setProgress([], true);
@@ -572,7 +578,7 @@
     var top = present().filter(function (i) { return S.roster[i].pts > 0; }).sort(function (a, b) { return S.roster[b].pts - S.roster[a].pts; }).slice(0, 3);
     var mvp = top.length ? '<div class="kick" style="font-size:1.1rem">Mentes más despiertas</div><div class="mvp">' + top.map(function (i, j) { return '<div><i>' + ['I', 'II', 'III'][j] + '</i> ' + esc(S.roster[i].n) + ' · ' + fmt(S.roster[i].pts) + '</div>'; }).join('') + '</div>' : '';
     if (S3.on) {
-      h = '<div class="topt" style="text-shadow:none"><div class="kick" style="color:#7a3a14">Sale de la caverna</div><h1 style="color:#14100c">Equipo <em style="color:' + w.color + ';text-shadow:0 .12rem 0 #14100c,0 0 1.5rem rgba(255,255,255,.6)">' + w.name + '</em></h1></div>';
+      h = '<div class="topt"><div class="kick" style="color:#fff3d6">Sale de la caverna</div><h1 style="color:#fff">Equipo <em style="color:' + w.color + ';text-shadow:0 .14rem 0 #14100c,0 0 1.4rem rgba(0,0,0,.7)">' + w.name + '</em></h1></div>';
       rk.slice(0, 3).forEach(function (k, j) { h += '<div class="lab3d" id="lab' + j + '" style="visibility:hidden;--tc:' + team(k).color + '"><i>' + ['I', 'II', 'III'][j] + '</i><u style="color:#fff">' + team(k).name + '</u><b>' + fmt(S.score[k]) + '</b></div>'; });
       stage.innerHTML = h + (mvp ? '<div class="bott">' + mvp + '</div>' : ''); labels('pod', Math.min(3, rk.length));
       return;
@@ -594,6 +600,77 @@
   }
   function vBye() {
     stage.innerHTML = '<div class="center"><div class="seal" style="font-size:4.5rem">' + Art.coin('sun', 'var(--gold)') + '</div><blockquote>«Una vida sin examen no es vida»</blockquote><div class="kick">Sócrates · Apología</div><div class="sub" style="max-width:62rem">No hablaba de este examen, pero para este también vale: comprueba si lo que crees saber aguanta una pregunta.</div><h1 style="font-size:3rem;margin-top:.6rem">Mucha <em>suerte</em></h1></div>';
+  }
+
+  /* ---------- fiesta final: fuegos artificiales ---------- */
+  var FW = { r: [], p: [], t: [], auto: 0 };
+  function fwLaunch(col, name, x, y) {
+    var W = innerWidth, H = innerHeight;
+    if (FW.r.length > 40) return;
+    x = x === undefined ? W * (0.1 + Math.random() * 0.8) : x; y = y === undefined ? H * (0.3 + Math.random() * 0.26) : y;
+    FW.r.push({ x: x + (Math.random() - 0.5) * W * 0.14, y: H + 10, tx: x, ty: y, t: 0, d: 0.55 + Math.random() * 0.3, c: col, n: name || '' });
+    if (FW.r.length < 4) Sfx.fuse();
+  }
+  function fwBurst(r, H) {
+    var n = FW.p.length > 1300 ? 30 : 90, kind = Math.floor(Math.random() * 3), s0 = H * (0.42 + Math.random() * 0.2), i, a, v;
+    for (i = 0; i < n; i++) {
+      a = Math.random() * 6.2832; v = kind === 1 ? s0 * (0.92 + Math.random() * 0.08) : s0 * Math.sqrt(Math.random());
+      FW.p.push({ x: r.tx, y: r.ty, px: r.tx, py: r.ty, vx: Math.cos(a) * v, vy: Math.sin(a) * v, l: 0, L: 1.1 + Math.random() * 0.7, c: kind === 2 && i % 2 ? '#fff3d0' : r.c });
+    }
+    FW.p.push({ x: r.tx, y: r.ty, f: 1, l: 0, L: 0.22, c: r.c });
+    if (r.n) FW.t.push({ x: r.tx, y: r.ty, n: r.n, l: 0 });
+    Sfx.boom(); if (S3.on && S3.fwFlash) S3.fwFlash(r.c);
+  }
+  function fwDraw(g, W, H, dt, t) {
+    var i, p, u, x, y, al, dr = Math.exp(-2.1 * dt);
+    g.clearRect(0, 0, W, H);
+    if (S.phase === 'lobby' || step().type !== 'party') { FW.r.length = FW.p.length = FW.t.length = 0; return; }
+    if (t > FW.auto) { FW.auto = t + 800 + Math.random() * 1700; fwLaunch(team(Math.floor(Math.random() * S.nTeams)).color); }
+    g.globalCompositeOperation = 'lighter'; g.lineCap = 'round';
+    for (i = FW.r.length - 1; i >= 0; i--) {
+      p = FW.r[i]; p.t += dt; u = Math.min(1, p.t / p.d); x = p.x + (p.tx - p.x) * u; y = p.y + (p.ty - p.y) * (1 - (1 - u) * (1 - u));
+      g.strokeStyle = 'rgba(255,224,170,.85)'; g.lineWidth = 3; g.beginPath(); g.moveTo(x, y); g.lineTo(x - (p.tx - p.x) * 0.05, y + 14 + 46 * (1 - u)); g.stroke();
+      if (u >= 1) { FW.r.splice(i, 1); fwBurst(p, H); }
+    }
+    for (i = FW.p.length - 1; i >= 0; i--) {
+      p = FW.p[i]; p.l += dt; if (p.l >= p.L) { FW.p.splice(i, 1); continue; }
+      al = 1 - p.l / p.L;
+      if (p.f) { var fr = H * 0.13, gr = g.createRadialGradient(p.x, p.y, 0, p.x, p.y, fr); gr.addColorStop(0, 'rgba(255,250,235,.9)'); gr.addColorStop(0.25, p.c); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.globalAlpha = al * 0.7; g.fillStyle = gr; g.fillRect(p.x - fr, p.y - fr, fr * 2, fr * 2); continue; }
+      p.px = p.x; p.py = p.y; p.vx *= dr; p.vy = p.vy * dr + H * 0.2 * dt; p.x += p.vx * dt; p.y += p.vy * dt;
+      g.globalAlpha = al < 0.35 ? al * (0.6 + Math.random() * 2) : Math.min(1, al * 1.3); g.strokeStyle = p.c; g.lineWidth = 2.5 + al * 3;
+      g.beginPath(); g.moveTo(p.x - p.vx * 0.075, p.y - p.vy * 0.075); g.lineTo(p.x, p.y); g.stroke();
+    }
+    g.globalCompositeOperation = 'source-over'; g.textAlign = 'center'; g.font = '800 ' + Math.round(H * 0.027) + 'px Cinzel, serif';
+    for (i = FW.t.length - 1; i >= 0; i--) {
+      p = FW.t[i]; p.l += dt; if (p.l > 1.3) { FW.t.splice(i, 1); continue; }
+      g.globalAlpha = Math.min(1, (1.3 - p.l) * 2.2); g.shadowColor = '#000'; g.shadowBlur = 12; g.fillStyle = '#fff6e0'; g.fillText(p.n, Math.max(90, Math.min(W - 90, p.x)), p.y - H * 0.02 - p.l * H * 0.03);
+    }
+    g.shadowBlur = 0; g.globalAlpha = 1;
+  }
+  function fwCount(k) {
+    S.cur.fwc = S.cur.fwc || [0, 0, 0, 0, 0]; S.cur.fwc[k]++;
+    var e = document.getElementById('fwc' + k); if (e) e.textContent = S.cur.fwc[k];
+  }
+  function fwFrom(ri) {
+    var r = S.roster[ri], k = r.team >= 0 ? r.team : 0;
+    fwLaunch(team(k).color, r.n); fwCount(k); if (S3.on && S3.cheer) S3.cheer(k);
+  }
+  function volley(n) {
+    var st = step(); Sfx.fanfare();
+    for (var i = 0; i < n; i++) (function (i) { setTimeout(function () { if (step() === st) fwLaunch(team(i % S.nTeams).color); }, 150 + i * 140); })(i);
+  }
+  function partyStart() {
+    S.cur.fwc = [0, 0, 0, 0, 0]; FW.auto = 0; Sfx.gong(); volley(8);
+    if (demo) S.roster.forEach(function (r, i) { if (r.bot && !r.out) for (var j = 0; j < 4; j++) botT.push(setTimeout(function () { if (step().type === 'party') fwFrom(i); }, 2500 + Math.random() * 26000)); });
+  }
+  function vParty() {
+    var rk = ranking(), c = S.cur.fwc || [0, 0, 0, 0, 0], k, h;
+    h = '<div class="topt"><div class="kick" style="color:#fff3d6">ΤΕΛΟΣ · Se acabó</div><h1 style="font-size:4.4rem;color:#fff">¡A por el <em>examen</em>!</h1><div class="sub" style="font-size:1.55rem;color:#fff3d6">Lanzad cohetes desde el móvil… o tocando la pantalla</div><div class="fwrow">';
+    for (k = 0; k < S.nTeams; k++) h += '<span>' + coinT(k) + '<b id="fwc' + k + '">' + c[k] + '</b></span>';
+    h += '</div></div>';
+    if (S3.on) rk.slice(0, 3).forEach(function (q, j) { h += '<div class="lab3d" id="lab' + j + '" style="visibility:hidden;--tc:' + team(q).color + '"><i>' + ['I', 'II', 'III'][j] + '</i><u style="color:#fff">' + team(q).name + '</u><b>' + fmt(S.score[q]) + '</b></div>'; });
+    stage.innerHTML = h;
+    if (S3.on) labels('pod', Math.min(3, rk.length));
   }
 
   /* ---------- menú y acciones ---------- */
@@ -646,6 +723,11 @@
     if (b) { act(b.getAttribute('data-a'), { k: b.getAttribute('data-k'), n: b.getAttribute('data-n'), i: b.getAttribute('data-i') }); return; }
     if (menu.className && !menu.contains(e.target)) closeMenu();
   });
+  document.addEventListener('pointerdown', function (e) {
+    if (!S || S.phase === 'lobby' || step().type !== 'party' || ov.firstChild || menu.className) return;
+    if (e.target.closest && e.target.closest('[data-a]')) return;
+    fwLaunch(team(Math.floor(Math.random() * S.nTeams)).color, '', e.clientX, e.clientY);
+  });
   document.addEventListener('keydown', function (e) {
     if (e.target.tagName === 'TEXTAREA' || ov.firstChild) return;
     if (e.key === ' ' || e.key === 'ArrowRight' || e.key === 'Enter' || e.key === 'PageDown') { e.preventDefault(); next(); }
@@ -671,8 +753,9 @@
     function size() { cv.width = innerWidth; cv.height = innerHeight; cols = []; }
     addEventListener('resize', size); size();
     function frame(t) {
-      requestAnimationFrame(frame); if (t - last < 40) return; last = t;
+      requestAnimationFrame(frame); var dtm = t - last; if (dtm < (fxMode === 'fire' ? 12 : 40)) return; last = t;
       var W = cv.width, H = cv.height, i, p;
+      if (fxMode === 'fire') { P.length = 0; cols = []; fwDraw(g, W, H, Math.min(0.05, dtm / 1000), t); return; }
       if (fxMode === 'matrix') {
         var fs = Math.max(14, Math.round(H / 45)); if (!cols.length) for (i = 0; i < W / fs; i++) cols.push(Math.random() * H / fs);
         g.fillStyle = 'rgba(20,16,12,.14)'; g.fillRect(0, 0, W, H); g.fillStyle = 'rgba(60,200,110,.22)'; g.font = fs + 'px monospace';
@@ -695,7 +778,7 @@
 
   /* ---------- arranque ---------- */
   readHash();
-  if (S3.init) { S3.init(document.getElementById('gl')); S3.onChange = function () { if (S) render(); }; }
+  if (S3.init) { S3.init(document.getElementById('gl')); S3.onChange = function () { if (S) render(); }; S3.onLand = function (j) { if (j) Sfx.tick(j === 1); else Sfx.gong(); }; }
   var old = null; try { old = JSON.parse(localStorage.getItem(LS) || 'null'); } catch (e) {}
   if (old && old.code && old.roster && now() - (old.savedAt || old.t0 || now()) < 6 * 3600 * 1000 && old.phase !== 'lobby') {
     S = old; S.paused = 0; S.cur = S.cur || {};

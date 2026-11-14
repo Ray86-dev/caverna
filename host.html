@@ -34,12 +34,13 @@ body.orc3 #stage,body.orc3 #scrim,body.orc3 #chips{visibility:hidden}
 .orc.o3d .kick,.orc.o3d .w,.orc.o3d .gr{text-shadow:0 .1rem .8rem #000,0 0 1.5rem #000}
 .orc.o3d .gr{position:absolute;bottom:3rem;left:0;right:0}
 .who6.w3{position:relative}
-.who6.w3 .clues{margin-left:25.5rem}
+.who6.w3 .clues{margin-left:28rem}
 .who6.w3 .av{position:absolute;left:0;bottom:0;width:23rem;justify-content:flex-end;padding-bottom:.5rem;text-shadow:0 .1rem .8rem #000,0 0 1.6rem #000}
 .who6.w3:not(.rvl) .clues{padding-bottom:8.5rem}
-.who6.w3:not(.rvl) .av{left:25.5rem;right:0;width:auto;flex-direction:row;justify-content:flex-start;align-items:center;gap:3rem;text-align:left;background:rgba(14,10,7,.6);padding:.6rem 1.5rem}
+.who6.w3.rvl .av{bottom:auto;top:0;width:27rem;justify-content:flex-start}
+.who6.w3:not(.rvl) .av{left:28rem;right:0;width:auto;flex-direction:row;justify-content:flex-start;align-items:center;gap:3rem;text-align:left;background:rgba(14,10,7,.6);padding:.6rem 1.5rem}
 .who6.w3:not(.rvl) .av .pts small{max-width:16rem}
-.nm6{font-family:var(--f-title);font-weight:900;font-size:3rem;color:var(--gold);line-height:1.05;animation:drop .6s cubic-bezier(.2,1.4,.4,1)}
+.nm6{font-family:var(--f-title);font-weight:900;font-size:2.8rem;color:var(--gold);line-height:1.05;animation:drop .6s cubic-bezier(.2,1.4,.4,1)}
 #flash{position:fixed;top:0;left:0;right:0;bottom:0;background:#fff8e6;z-index:60;pointer-events:none;opacity:0}
 #flash.go{animation:flash 2.2s ease-out}
 @keyframes flash{0%{opacity:0}18%{opacity:1}45%{opacity:1}100%{opacity:0}}
@@ -51,6 +52,8 @@ body.orc3 #stage,body.orc3 #scrim,body.orc3 #chips{visibility:hidden}
 .lab3d small{display:block;font-size:.95rem;color:var(--slip2);opacity:.9;white-space:normal;max-width:11.5rem;margin:0 auto;line-height:1.2}
 .lab3d i{font-family:var(--f-title);font-style:normal;font-weight:900;font-size:1.5rem;color:var(--gold);display:block}
 .topt{text-align:center;display:flex;flex-direction:column;gap:.6rem;align-items:center;text-shadow:0 .15rem 1.2rem rgba(0,0,0,.85)}
+.fwrow{display:flex;gap:2.2rem;font-family:var(--f-title);font-weight:900;font-size:1.7rem;color:var(--slip);align-items:center}
+.fwrow span{display:flex;gap:.5rem;align-items:center}
 .bott{margin-top:auto;display:flex;flex-direction:column;gap:.5rem;align-items:center;background:rgba(14,10,7,.78);padding:.8rem 2.4rem;align-self:center}
 #app{position:relative;z-index:1;height:100%;display:flex;flex-direction:column}
 #top{height:5.2rem;display:flex;align-items:center;gap:1.4rem;padding:0 2rem;flex:none}
@@ -298,8 +301,8 @@ blockquote{font-family:var(--f-quote);font-style:italic;font-size:4rem;font-weig
 <script src="js/art.js?v=6"></script>
 <script src="js/content.js?v=6"></script>
 <script src="js/net.js?v=6"></script>
-<script src="js/audio.js?v=6"></script>
-<script src="js/scene.js?v=7"></script>
-<script src="js/host.js?v=7"></script>
+<script src="js/audio.js?v=8"></script>
+<script src="js/scene.js?v=8"></script>
+<script src="js/host.js?v=8"></script>
 </body>
 </html>

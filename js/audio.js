@@ -44,6 +44,8 @@
     m.forEach(function (f, i) { if (f) { pluck(f, t + i * 0.14, 0.2); tone(f / 2, t + i * 0.14, 0.4, 'triangle', 0.14); } });
     tone(1047, t + 1.26, 1.2, 'triangle', 0.2); tone(784, t + 1.26, 1.2, 'triangle', 0.15); tone(659, t + 1.26, 1.2, 'triangle', 0.15);
   };
+  A.boom = function () { var t = now(); tone(140, t, 0.5, 'sine', 0.3, 40); noise(t, 0.5, 0.12, 400); noise(t + 0.08, 0.9, 0.035, 5000); };
+  A.fuse = function () { tone(500, now(), 0.45, 'sine', 0.035, 1600); };
   A.drum = function (secs) { var t = now(); for (var i = 0; i < secs * 16; i++) noise(t + i / 16, 0.05, 0.05 + 0.1 * (i / (secs * 16)), 800); };
 
   /* Bucle musical: 'think' (preguntas), 'fast' (duelos y tablero), 'calm' (ágora), 'lobby' */

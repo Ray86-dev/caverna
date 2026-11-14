@@ -5,7 +5,7 @@
   var qs = location.search, code = ((qs.match(/[?&]s=([A-Za-z]{4})/) || [])[1] || '').toUpperCase(), slot = (qs.match(/[?&]p=(\w+)/) || [])[1] || '';
   var GL = ['Α', 'Β', 'Γ', 'Δ'], ROM = ['', 'I', 'II', 'III', 'IV', 'V', 'VI'];
   var gid = '', G = null, me = -1, offset = 0, mine = {}, pend = -1, claim = null, lastKey = '', t0 = Date.now(), lastMsg = 0, wantNew = false;
-  var cid = '';
+  var cid = '', fwT = 0;
   try { cid = localStorage.getItem('caverna-cid' + slot) || ''; } catch (e) {}
   if (!cid) { cid = Math.random().toString(36).slice(2, 12) + Math.random().toString(36).slice(2, 6); try { localStorage.setItem('caverna-cid' + slot, cid); } catch (e) {} }
   try { var sv = JSON.parse(sessionStorage.getItem('caverna-mine' + slot) || 'null'); if (sv && sv.code === code) { mine = sv.mine || {}; gid = sv.gid || ''; } } catch (e) {}
@@ -51,7 +51,7 @@
     }
     var r = G.ro[me], my = mine[G.idx], ans = my !== undefined, rv = G.sub === 'reveal', res = G.res ? G.res[me] : undefined;
     var chosen = st.orac && st.orac.some(function (x) { return x.ri === me; });
-    key = [G.phase, G.idx, G.sub, ans, pend, st.clues ? st.clues.length : 0, st.bet, chosen, r[1], G.made, st.type].join('|');
+    key = [G.phase, G.idx, G.sub, ans, pend, st.clues ? st.clues.length : 0, st.bet, chosen, r[1], G.made, st.type, st.party].join('|');
     if (key === lastKey && !force) return; lastKey = key;
 
     if (st.type === 'lobby') {
@@ -102,7 +102,7 @@
     } else if (st.type === 'scores') {
       h = '<div class="c"><div class="kick">Clasificación</div>' + scores() + '</div>';
     } else if (st.type === 'end') {
-      h = '<div class="c" style="justify-content:flex-start"><div class="kick" style="padding-top:6px">Tu informe</div><h2>' + fmt(r[4]) + ' puntos</h2>';
+      h = '<div class="c" style="justify-content:flex-start">' + (st.party ? '<div class="kick" style="padding-top:6px">Fiesta final</div><button class="go" data-a="fw" style="font-size:22px;padding:22px 10px;width:100%;touch-action:manipulation">' + Art.ic('sun') + ' ¡Lanza un cohete!</button><p style="margin:0">Sale en la pantalla con tu nombre</p>' : '') + '<div class="kick" style="padding-top:6px">Tu informe</div><h2>' + fmt(r[4]) + ' puntos</h2>';
       var stt = r[5] || [], best = -1, worst = -1, bp = -1, wp = 2;
       for (var t = 1; t <= 4; t++) {
         var x = stt[t] || [0, 0], p = x[1] ? x[0] / x[1] : -1, pc2 = Math.round(Math.max(0, p) * 100);
@@ -130,6 +130,7 @@
     else if (a === 'list') { wantNew = false; render(); }
     else if (a === 'new') { var n = document.getElementById('ni').value.trim(); if (n) { claim = { k: 'new', name: n }; send(claim); render(); setTimeout(function () { if (me < 0) { claim = null; render(); } }, 5000); } }
     else if (a === 'free') { send({ k: 'free' }); }
+    else if (a === 'fw') { if (Date.now() - fwT > 600) { fwT = Date.now(); send({ k: 'fw' }); buzz(40); b.style.transform = 'scale(.94)'; setTimeout(function () { b.style.transform = ''; }, 130); } }
     else if (a === 'pend') { pend = pend === i ? -1 : i; render(); }
     else if (a === 'ans') answer(i);
   });

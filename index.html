@@ -71,7 +71,8 @@ input.code{font-family:var(--f-title);text-transform:uppercase;letter-spacing:.4
 .sc div.me{border-color:var(--gold)}
 .sc div i{font-family:var(--f-title);font-style:normal;color:var(--dim);width:26px;text-align:left}
 .sc div b{font-family:var(--f-title);font-variant-numeric:tabular-nums}
-.sc span{flex:1;text-align:left}
+.sc span:not(.coin){flex:1;text-align:left}
+.sc .coin{flex:none}
 .sc .coin{font-size:14px}
 .tb{width:100%;text-align:left;font-size:15.500px;font-weight:800}
 .tb span{float:right;font-family:var(--f-title)}
@@ -94,6 +95,6 @@ input.code{font-family:var(--f-title);text-transform:uppercase;letter-spacing:.4
 <script src="vendor/supabase.js"></script>
 <script src="js/art.js?v=5"></script>
 <script src="js/net.js?v=5"></script>
-<script src="js/play.js?v=5"></script>
+<script src="js/play.js?v=8"></script>
 </body>
 </html>
