@@ -596,7 +596,7 @@
     var f = Math.min(1, (stage - 1) / 6), a;
     if (mode === 'lobby') { tPos.set(Math.sin(tm * 0.11) * 1.5, 4.2, 7); tLook.set(0, 10, 34); }
     else if (mode === 'scores') { tPos.set(Math.sin(tm * 0.15) * 1.2, 18, 41); tLook.set(0, 11.5, -16); }
-    else if (mode === 'out') { var N = OUT.N, k0 = Math.max(0, 1 - (tm - OUT.t0) / 5), rr = 27 + N * 7 + k0 * k0 * 16; a = Math.sin(tm * 0.1) * 0.4; tPos.set(Math.sin(a) * rr, OY + 6.5 - N * 2.5, 5 + Math.cos(a) * rr); tLook.set(0, OY + 6.2 + N * 7, -2); }
+    else if (mode === 'out') { var N = OUT.N, k0 = Math.max(0, 1 - (tm - OUT.t0) / 5), rr = 27 + N * 7 + k0 * k0 * 16; a = Math.sin(tm * 0.1) * 0.4; tPos.set(Math.sin(a) * rr, OY + 6.5 - N * 2.5, 5 + Math.cos(a) * rr); tLook.set(0, OY + 5 + N * 8.2, -2); }
     else if (mode === 'table') { tPos.set(0, TAY + 37, 11.5); tLook.set(0, TAY, -2.6); }
     else if (mode === 'who') { a = Math.sin(tm * 0.2) * 0.45; tPos.set(11.2 + a, WHY + 7.5, 22); tLook.set(11.2, WHY + 7.1, 0); }
     else if (mode === 'oracle') { a = Math.sin(tm * 0.25) * 2.2; tPos.set(a, ORY + 6.2, 18); tLook.set(0, ORY + 9.4, 0); }

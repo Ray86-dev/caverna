@@ -122,6 +122,7 @@
     if (S.paused) return togglePause();
     if (st.type === 'board') { if (S.sub === 'ready') return startBoard(); if (S.sub === 'open') return finishBoard(); }
     if (S.sub === 'open') return timeUp(true);
+    if (st.type === 'bye' && S.idx === S.steps.length - 1) S.steps.push({ type: 'party', r: 6 });
     if (S.idx < S.steps.length - 1) go(S.idx + 1);
     else if (st.type === 'party') volley(16);
   }
@@ -544,7 +545,7 @@
     if (S3.board && S3.board.active && !b3) S3.board.stop();
     S3.setMode(lobby ? 'lobby' : t === 'scores' ? 'scores' : end ? 'out' : b3 ? 'table' : t === 'who' ? 'who' : 'play', st.r || 1);
     if (t === 'who') S3.who((S.cur.clue || 0) + 1, S.sub === 'reveal', C.names[st.a]);
-    sc = lobby ? 0.2 : t === 'intro' ? 0.42 : (t === 'scores' || t === 'podium' || t === 'party') ? 0 : t === 'bye' ? 0.3 : t === 'report' ? 0.82 : (t === 'board' && S.sub === 'ready') ? 0.5 : 0.76;
+    sc = lobby ? 0.2 : t === 'intro' ? 0.42 : (t === 'scores' || t === 'podium' || t === 'party') ? 0 : t === 'bye' ? 0.08 : t === 'report' ? 0.82 : (t === 'board' && S.sub === 'ready') ? 0.5 : 0.76;
     if (b3) sc = S.sub === 'open' ? 0 : 0.55; if (t === 'who') sc = 0.08;
     root.style.setProperty('--scrim', sc);
     if (lobby) S3.setProgress([], true);
@@ -599,7 +600,8 @@
     stage.innerHTML = h + '</div></div>';
   }
   function vBye() {
-    stage.innerHTML = '<div class="center"><div class="byec"><div class="seal" style="font-size:4.5rem">' + Art.coin('sun', 'var(--gold)') + '</div><blockquote>«Una vida sin examen no es vida»</blockquote><div class="kick">Sócrates · Apología</div><div class="sub" style="max-width:62rem">No hablaba de este examen, pero para este también vale: comprueba si lo que crees saber aguanta una pregunta.</div><h1 style="font-size:3rem;margin-top:.6rem">Mucha <em>suerte</em></h1></div></div>';
+    if (S3.on) { stage.innerHTML = '<div class="bott bye3"><blockquote>«Una vida sin examen no es vida»</blockquote><div class="kick">Sócrates · Apología</div><div class="sub">Comprueba si lo que crees saber aguanta una pregunta. <b>Mucha suerte.</b></div></div>'; return; }
+    stage.innerHTML = '<div class="center"><div class="seal" style="font-size:4.5rem">' + Art.coin('sun', 'var(--gold)') + '</div><blockquote>«Una vida sin examen no es vida»</blockquote><div class="kick">Sócrates · Apología</div><div class="sub" style="max-width:62rem">No hablaba de este examen, pero para este también vale: comprueba si lo que crees saber aguanta una pregunta.</div><h1 style="font-size:3rem;margin-top:.6rem">Mucha <em>suerte</em></h1></div>';
   }
 
   /* ---------- fiesta final: fuegos artificiales ---------- */
@@ -782,6 +784,7 @@
   var old = null; try { old = JSON.parse(localStorage.getItem(LS) || 'null'); } catch (e) {}
   if (old && old.code && old.roster && now() - (old.savedAt || old.t0 || now()) < 6 * 3600 * 1000 && old.phase !== 'lobby') {
     S = old; S.paused = 0; S.cur = S.cur || {};
+    if (S.steps && S.steps.length && S.steps[S.steps.length - 1].type === 'bye') S.steps.push({ type: 'party', r: 6 });
     var st0 = step();
     if (st0.type === 'board' && S.sub === 'open') { S.sub = 'ready'; S.ans = {}; S.cur = {}; }
     else if (S.sub === 'open' && S.deadline) { S.cur.total = S.cur.total || 20000; S.deadline = now() + Math.min(S.cur.total, 15000); }
