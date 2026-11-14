@@ -578,7 +578,7 @@
     var top = present().filter(function (i) { return S.roster[i].pts > 0; }).sort(function (a, b) { return S.roster[b].pts - S.roster[a].pts; }).slice(0, 3);
     var mvp = top.length ? '<div class="kick" style="font-size:1.1rem">Mentes más despiertas</div><div class="mvp">' + top.map(function (i, j) { return '<div><i>' + ['I', 'II', 'III'][j] + '</i> ' + esc(S.roster[i].n) + ' · ' + fmt(S.roster[i].pts) + '</div>'; }).join('') + '</div>' : '';
     if (S3.on) {
-      h = '<div class="topt"><div class="kick" style="color:#fff3d6">Sale de la caverna</div><h1 style="color:#fff">Equipo <em style="color:' + w.color + ';text-shadow:0 .14rem 0 #14100c,0 0 1.4rem rgba(0,0,0,.7)">' + w.name + '</em></h1></div>';
+      h = '<div class="topt win"><div class="kick">Sale de la caverna</div><h1>Equipo <em style="color:' + w.color + '">' + w.name + '</em></h1></div>';
       rk.slice(0, 3).forEach(function (k, j) { h += '<div class="lab3d" id="lab' + j + '" style="visibility:hidden;--tc:' + team(k).color + '"><i>' + ['I', 'II', 'III'][j] + '</i><u style="color:#fff">' + team(k).name + '</u><b>' + fmt(S.score[k]) + '</b></div>'; });
       stage.innerHTML = h + (mvp ? '<div class="bott">' + mvp + '</div>' : ''); labels('pod', Math.min(3, rk.length));
       return;
@@ -599,7 +599,7 @@
     stage.innerHTML = h + '</div></div>';
   }
   function vBye() {
-    stage.innerHTML = '<div class="center"><div class="seal" style="font-size:4.5rem">' + Art.coin('sun', 'var(--gold)') + '</div><blockquote>«Una vida sin examen no es vida»</blockquote><div class="kick">Sócrates · Apología</div><div class="sub" style="max-width:62rem">No hablaba de este examen, pero para este también vale: comprueba si lo que crees saber aguanta una pregunta.</div><h1 style="font-size:3rem;margin-top:.6rem">Mucha <em>suerte</em></h1></div>';
+    stage.innerHTML = '<div class="center"><div class="byec"><div class="seal" style="font-size:4.5rem">' + Art.coin('sun', 'var(--gold)') + '</div><blockquote>«Una vida sin examen no es vida»</blockquote><div class="kick">Sócrates · Apología</div><div class="sub" style="max-width:62rem">No hablaba de este examen, pero para este también vale: comprueba si lo que crees saber aguanta una pregunta.</div><h1 style="font-size:3rem;margin-top:.6rem">Mucha <em>suerte</em></h1></div></div>';
   }
 
   /* ---------- fiesta final: fuegos artificiales ---------- */
