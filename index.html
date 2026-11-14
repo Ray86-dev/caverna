@@ -18,7 +18,9 @@ body{background:var(--glaze);color:var(--slip);font-family:var(--f-body);font-we
 #hd .w{flex:1;min-width:0}
 #hd .n{font-weight:800;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.15}
 #hd .t{font-size:12.500px;color:var(--dim)}
-#hd .p{font-family:var(--f-title);font-weight:900;font-size:19px;color:var(--gold);font-variant-numeric:tabular-nums}
+#hd .p{font-family:var(--f-title);font-weight:900;font-size:19px;color:var(--gold);font-variant-numeric:tabular-nums;text-align:right;line-height:1.05}
+#hd .p small{display:block;font-family:var(--f-body);font-weight:600;font-size:10.5px;color:var(--dim);letter-spacing:.02em}
+.res small .tl{display:block;margin-top:10px;padding-top:8px;border-top:1px solid var(--line);color:var(--gold)}
 #gk{display:none;height:12px;background:var(--greca) repeat-x center;background-size:auto 100%;flex:none;opacity:.9}
 #hd.on + #gk{display:block}
 #tb{height:5px;background:var(--glaze3);flex:none;visibility:hidden}
@@ -95,6 +97,6 @@ input.code{font-family:var(--f-title);text-transform:uppercase;letter-spacing:.4
 <script src="vendor/supabase.js"></script>
 <script src="js/art.js?v=5"></script>
 <script src="js/net.js?v=5"></script>
-<script src="js/play.js?v=8"></script>
+<script src="js/play.js?v=9"></script>
 </body>
 </html>

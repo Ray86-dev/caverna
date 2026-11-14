@@ -26,7 +26,7 @@
     document.getElementById('he').innerHTML = T ? coinT(r[1]) : Art.coin('sun', 'var(--line)');
     document.getElementById('hn').textContent = r[0];
     document.getElementById('ht').textContent = T ? 'Equipo ' + T[0] + ' · ' + fmt(G.sc[r[1]] || 0) + ' puntos' : 'Esperando equipo…';
-    document.getElementById('hp').textContent = fmt(r[4]);
+    document.getElementById('hp').innerHTML = fmt(r[4]) + '<small>tus puntos</small>';
   }
   function answered() { return G && (mine[G.idx] !== undefined); }
   function answer(v) { if (!G || answered()) return; mine[G.idx] = v; keepMine(); pend = -1; send({ k: 'ans', idx: G.idx, val: v }); buzz(30); render(true); }
@@ -51,7 +51,7 @@
     }
     var r = G.ro[me], my = mine[G.idx], ans = my !== undefined, rv = G.sub === 'reveal', res = G.res ? G.res[me] : undefined;
     var chosen = st.orac && st.orac.some(function (x) { return x.ri === me; });
-    key = [G.phase, G.idx, G.sub, ans, pend, st.clues ? st.clues.length : 0, st.bet, chosen, r[1], G.made, st.type, st.party].join('|');
+    key = [G.phase, G.idx, G.sub, ans, pend, st.clues ? st.clues.length : 0, st.bet, chosen, r[1], G.made, st.type, st.party, st.type === 'scores' || st.type === 'end' ? G.sc.join(',') + '/' + r[4] : ''].join('|');
     if (key === lastKey && !force) return; lastKey = key;
 
     if (st.type === 'lobby') {
@@ -63,7 +63,7 @@
     } else if (st.type === 'mcq') {
       if (rv) {
         var good = ans && my === st.correct;
-        h = verdict(ans, good, '+' + (res || 0), 'Fallo', '<b>' + esc(st.opts[st.correct]) + '</b><br>' + esc(st.e));
+        h = verdict(ans, good, '+' + (res || 0), 'Fallo', '<b>' + esc(st.opts[st.correct]) + '</b><br>' + esc(st.e) + teamLine());
         if (good) buzz(80);
       } else if (ans) h = sent(st.opts[my]);
       else if (st.kind === 'duel') {
@@ -84,7 +84,7 @@
         h = '<div class="q">' + esc(st.q) + '</div><div class="os">'; st.opts.forEach(function (o, i) { h += '<button class="o col" style="--oc:' + pc[i] + '" data-a="ans" data-i="' + i + '">' + esc(o) + '</button>'; }); h += '</div>';
       }
     } else if (st.type === 'who') {
-      if (rv) { var g2 = ans && my === st.correct; h = verdict(ans, g2, '+' + (res || 0), 'No era ' + esc(st.names[my] || ''), 'Era <b>' + esc(st.names[st.correct]) + '</b>'); if (g2) buzz(80); }
+      if (rv) { var g2 = ans && my === st.correct; h = verdict(ans, g2, '+' + (res || 0), 'No era ' + esc(st.names[my] || ''), 'Era <b>' + esc(st.names[st.correct]) + '</b>' + teamLine()); if (g2) buzz(80); }
       else if (ans) h = sent(st.names[my]);
       else {
         h = st.clues.map(function (c, i) { return '<div class="clue"><b>' + ['I', 'II', 'III', 'IV'][i] + '</b><span>«' + esc(c) + '»</span></div>'; }).join('');
@@ -113,6 +113,10 @@
       h += scores() + '<p class="qt" style="font-size:18px;color:var(--slip)">«Una vida sin examen no es vida»</p><p>Mucha suerte.</p></div>';
     }
     m.innerHTML = h;
+  }
+  function teamLine() {
+    var r = G.ro[me], k = r[1]; if (!G.gain || k < 0 || G.gain[k] === undefined) return '';
+    return '<span class="tl">Tu equipo suma <b>+' + fmt(G.gain[k]) + '</b>: es la media de lo que saca cada uno.</span>';
   }
   function sent(txt) { return '<div class="c"><div class="xl">' + Art.ic('check') + '</div><h2>Enviado</h2><div class="res"><div class="v" style="margin:0">' + esc(txt) + '</div></div><p>Mira la pantalla</p></div>'; }
   function scores() {
