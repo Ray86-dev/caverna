@@ -549,7 +549,7 @@
     if (b3) sc = S.sub === 'open' ? 0 : 0.55; if (t === 'who') sc = 0.08;
     root.style.setProperty('--scrim', sc);
     if (lobby) S3.setProgress([], true);
-    else if (end) S3.setPodium(ranking().slice(0, 3));
+    else if (end) { var rk3 = ranking().slice(0, 3); S3.setPodium(rk3, rk3.map(function (k) { return { n: team(k).name, s: fmt(S.score[k]) }; })); }
     else if (t !== 'scores') S3.setProgress(prog3d((st.r || 1) - 1), true);
   }
   function labels(kind, n) {
@@ -580,8 +580,7 @@
     var mvp = top.length ? '<div class="kick" style="font-size:1.1rem">Mentes más despiertas</div><div class="mvp">' + top.map(function (i, j) { return '<div><i>' + ['I', 'II', 'III'][j] + '</i> ' + esc(S.roster[i].n) + ' · ' + fmt(S.roster[i].pts) + '</div>'; }).join('') + '</div>' : '';
     if (S3.on) {
       h = '<div class="topt win"><div class="kick">Sale de la caverna</div><h1>Equipo <em style="color:' + w.color + '">' + w.name + '</em></h1></div>';
-      rk.slice(0, 3).forEach(function (k, j) { h += '<div class="lab3d" id="lab' + j + '" style="visibility:hidden;--tc:' + team(k).color + '"><i>' + ['I', 'II', 'III'][j] + '</i><u style="color:#fff">' + team(k).name + '</u><b>' + fmt(S.score[k]) + '</b></div>'; });
-      stage.innerHTML = h + (mvp ? '<div class="bott">' + mvp + '</div>' : ''); labels('pod', Math.min(3, rk.length));
+      stage.innerHTML = h + (mvp ? '<div class="bott">' + mvp + '</div>' : '');
       return;
     }
     h = '<div class="center"><div class="kick">Sale de la caverna</div><h1>Equipo <em style="color:' + w.color + '">' + w.name + '</em></h1><div class="pod">';
@@ -670,9 +669,7 @@
     h = '<div class="topt"><div class="kick" style="color:#fff3d6">ΤΕΛΟΣ · Se acabó</div><h1 style="font-size:4.4rem;color:#fff">¡A por el <em>examen</em>!</h1><div class="sub" style="font-size:1.55rem;color:#fff3d6">Lanzad cohetes desde el móvil… o tocando la pantalla</div><div class="fwrow">';
     for (k = 0; k < S.nTeams; k++) h += '<span>' + coinT(k) + '<b id="fwc' + k + '">' + c[k] + '</b></span>';
     h += '</div></div>';
-    if (S3.on) rk.slice(0, 3).forEach(function (q, j) { h += '<div class="lab3d" id="lab' + j + '" style="visibility:hidden;--tc:' + team(q).color + '"><i>' + ['I', 'II', 'III'][j] + '</i><u style="color:#fff">' + team(q).name + '</u><b>' + fmt(S.score[q]) + '</b></div>'; });
     stage.innerHTML = h;
-    if (S3.on) labels('pod', Math.min(3, rk.length));
   }
 
   /* ---------- menú y acciones ---------- */
@@ -700,7 +697,7 @@
     else if (a === 'fs') { try { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); } catch (e) {} closeMenu(); }
     else if (a === 'reset') { modal('<b>¿Empezar una partida nueva?</b><span class="hint">Se borran los puntos. La lista y el código de sala se mantienen.</span><div style="display:flex;gap:1rem;justify-content:flex-end"><button class="b sm" data-a="mclose">Cancelar</button><button class="b sm" data-a="reset2" style="color:var(--bad)">Sí, nueva partida</button></div>'); closeMenu(); }
     else if (a === 'reset2') { var code = S.code, ro = S.roster; S = fresh(); S.code = code; S.roster = ro.map(function (r) { var x = mk(r.n, r.g); x.out = r.out; x.cid = r.cid; x.seen = r.seen; return x; }); ov.innerHTML = ''; fxMode = 'embers'; music(); render(); pub(); }
-    else if (a === 'pt') { S.score[+d.k] = Math.max(0, S.score[+d.k] + (+d.n)); Sfx.pop(); openMenu(); pub(); if (step().type === 'scores') render(); }
+    else if (a === 'pt') { S.score[+d.k] = Math.max(0, S.score[+d.k] + (+d.n)); Sfx.pop(); openMenu(); pub(); if (S.phase !== 'lobby' && /^(scores|podium|report|bye|party)$/.test(step().type)) { render(); openMenu(); } }
     else if (a === 'star') { S.score[+d.k] += 300; Sfx.ok(); pub(); }
     else if (a === 'orac') { closeMenu(); oracle(present(), '', null); }
     else if (a === 'orac2') oraclePoll();

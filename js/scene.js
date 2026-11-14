@@ -179,7 +179,10 @@
       add(outG, new T.Mesh(new T.BoxGeometry(5.5, 0.35, 5.5), marble), d[0], d[1] - 0.175, 4);
       add(outG, new T.Mesh(new T.BoxGeometry(4.4, 2.9, 0.06), gold), d[0], d[1] - 1.95, 6.5);
       add(outG, new T.Mesh(new T.BoxGeometry(4.15, 2.65, 0.1), plaqM), d[0], d[1] - 1.95, 6.52);
-      plinths.push({ x: d[0], y: d[1], py: d[1] - 0.72, pz: 6.6 });
+      var pcv = document.createElement('canvas'); pcv.width = 512; pcv.height = 328; var ptx = new T.CanvasTexture(pcv); ptx.encoding = T.sRGBEncoding; ptx.anisotropy = 8;
+      var pm = add(outG, new T.Mesh(new T.PlaneGeometry(4.15, 2.65), new T.MeshBasicMaterial({ map: ptx })), d[0], d[1] - 1.95, 6.58); pm.userData.ns = 1;
+      plinths.push({ x: d[0], y: d[1], py: d[1] - 0.72, pz: 6.6, cx: pcv.getContext('2d'), tex: ptx, txt: null });
+      plaque(plinths.length - 1, null);
     });
     OUT.rays = sprite(ctex(256, 256, function (x) {
       x.translate(128, 128); x.fillStyle = 'rgba(255,226,150,.6)';
@@ -199,6 +202,21 @@
     hemi = new T.HemisphereLight(0xbfdcff, 0x9a8058, 0.5); scene.add(hemi);
     OUT.fw = new T.PointLight(0xffffff, 0, 200, 1.1); OUT.fw.position.set(0, 34, -6); outG.add(OUT.fw);
     outG.traverse(function (o) { if (o.isMesh && !o.userData.ns) { o.castShadow = !o.userData.nc; o.receiveShadow = true; } });
+  }
+  /* el rótulo va pintado en la propia placa: así nunca se sale del marco */
+  function plaque(j, info) {
+    var p = plinths[j], x = p.cx, f;
+    p.txt = info; x.fillStyle = '#241b13'; x.fillRect(0, 0, 512, 328); x.strokeStyle = 'rgba(227,178,74,.55)'; x.lineWidth = 3; x.strokeRect(12, 12, 488, 304);
+    if (info) {
+      x.textAlign = 'center'; x.textBaseline = 'middle';
+      x.fillStyle = '#e3b24a'; x.font = '900 62px Cinzel, serif'; x.fillText(['I', 'II', 'III'][j], 256, 66);
+      f = 58; x.font = '800 ' + f + 'px Cinzel, serif'; var nm = String(info.n).toUpperCase().split('').join(' ');
+      while (f > 26 && x.measureText(nm).width > 440) { f -= 3; x.font = '800 ' + f + 'px Cinzel, serif'; }
+      x.fillStyle = '#ffffff'; x.fillText(nm, 256, 152);
+      f = 104; x.font = '900 ' + f + 'px Cinzel, serif'; while (f > 40 && x.measureText(info.s).width > 440) { f -= 4; x.font = '900 ' + f + 'px Cinzel, serif'; }
+      x.fillStyle = '#f2e4c9'; x.fillText(info.s, 256, 248);
+    }
+    p.tex.needsUpdate = true;
   }
   function updOut(dt) {
     var i, N, e = tm - OUT.t0, D = [3.1, 2.2, 1.4], fl = 0.85 + Math.sin(tm * 11) * 0.08 + Math.sin(tm * 23) * 0.05;
@@ -253,8 +271,11 @@
     for (var k = 0; k < n; k++) { var m = coinMesh(list[k]); caveG.add(m); coins.push({ m: m, p: 0, t: 0, x: (k - (n - 1) / 2) * LANE, team: list[k], ph: k * 1.3 }); }
   };
   S.setProgress = function (arr, snap) { coins.forEach(function (c, k) { c.t = Math.max(0, Math.min(1, arr[k] || 0)); if (snap) c.p = c.t; }); };
-  S.setPodium = function (rank) {
-    if (!S.on) return; var sig = rank.join(','); if (S._pod === sig && podCoins.length) return; S._pod = sig;
+  S.setPodium = function (rank, info) {
+    if (!S.on) return;
+    var ts = JSON.stringify(info || []);
+    if (ts !== S._podT) { S._podT = ts; plinths.forEach(function (p, j) { plaque(j, info && info[j] ? info[j] : null); }); if (S.fontP && !S._podF) { S._podF = 1; S.fontP.then(function () { plinths.forEach(function (p, j) { plaque(j, p.txt); }); }); } }
+    var sig = rank.join(','); if (S._pod === sig && podCoins.length) return; S._pod = sig;
     podCoins.forEach(function (m) { outG.remove(m); }); podCoins = []; OUT.rank = rank.slice(); if (tm - OUT.t0 > 8) OUT.t0 = tm - 8;
     rank.forEach(function (k, j) {
       if (k === undefined || !coins[k] || !plinths[j]) return;
