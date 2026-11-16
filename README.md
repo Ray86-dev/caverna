@@ -1,5 +1,7 @@
 # Sal de la caverna
 
+> **In English:** A real-time classroom quiz game for philosophy revision. The board shows a QR code, students join from their phones and play six team rounds. No database and no student data: only ephemeral messages over Supabase Realtime. [Open the host screen](https://ray86-dev.github.io/caverna/host.html).
+
 Juego de repaso de Filosofía (4.º ESO) para jugar en clase con una pantalla táctil y los móviles del alumnado.
 
 - `host.html`: pantalla principal (pizarra/PIM). Muestra un QR y dirige la partida.
